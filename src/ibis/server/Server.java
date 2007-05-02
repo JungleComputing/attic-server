@@ -1,38 +1,72 @@
 package ibis.server;
 
+import ibis.util.ClassLister;
 import ibis.util.Log;
 
 import java.io.PrintStream;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
-public final class Server extends Thread {
+import smartsockets.virtual.InitializationException;
+import smartsockets.virtual.VirtualSocketFactory;
+
+public final class Server {
 
     // NOT the name of this class but the entire registry package instead
     private static final Logger logger = Logger.getLogger("ibis.server");
 
-    public Server(Properties properties) {
-        // TODO Auto-generated constructor stub
+    private final VirtualSocketFactory virtualSocketFactory;
+
+    private final ArrayList<Service> services;
+
+    public Server(Properties properties) throws Exception {
+
+        // create the virtual socket factory
+
+        Properties smartProperties = new Properties();
+        smartProperties.setProperty(smartsockets.Properties.DIRECT_PORT,
+                properties.getProperty(ServerProperties.PORT));
+
+        virtualSocketFactory = VirtualSocketFactory.createSocketFactory(
+                smartProperties, true);
+
+        // Obtain a list of Services
+        String implPath = properties.getProperty(ServerProperties.IMPL_PATH);
+        ClassLister clstr = ClassLister.getClassLister(implPath);
+        List<Class> compnts = clstr.getClassList("Ibis-Service", Service.class);
+        Class[] serviceClassList = compnts.toArray(new Class[compnts.size()]);
+
+        services = new ArrayList<Service>();
+
+        for (int i = 0; i < serviceClassList.length; i++) {
+            try {
+                Service service = (Service) serviceClassList[i].getConstructor(
+                        new Class[] { Properties.class,
+                                VirtualSocketFactory.class }).newInstance(
+                        new Object[] { properties, virtualSocketFactory });
+                services.add(service);
+            } catch (Throwable e) {
+                logger.warn("Could not create service " + serviceClassList[i]
+                        + ":", e);
+            }
+        }
     }
-   
+
     /**
      * Returns the local address of this server as a string
      */
     public String getLocalAddress() {
-        //TODO: implement
-        return null;
-    }
-    
-    public void run() {
-
+        return virtualSocketFactory.getVirtualAddressAsString();
     }
     
     public String toString() {
         return "Ibis server on " + getLocalAddress();
     }
-    
+
     private static void printUsage(PrintStream out) {
         out.println("Start a server for Ibis.");
         out.println();
@@ -109,9 +143,9 @@ public final class Server extends Thread {
             logger.error("Could not start Server", t);
             System.exit(1);
         }
+        
         // run server until completion, then exit
-        server.run();
+      //  server.run();
     }
 
-    
 }
