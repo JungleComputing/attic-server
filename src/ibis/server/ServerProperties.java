@@ -1,16 +1,17 @@
 package ibis.server;
 
+import ibis.util.TypedProperties;
+
 import java.util.Map;
-import java.util.Properties;
 import java.util.TreeMap;
 
 public final class ServerProperties {
 
     public static final String PREFIX = "ibis.server.";
 
-    public static final String NAME = PREFIX + "name";
-
-    public static final String HUBS = PREFIX + "hubs";
+    public static final String HUB_ADDRESSES = PREFIX + "hub.addresses";
+    
+    public static final String START_HUB = PREFIX + "start.hub";
 
     public static final String PORT = PREFIX + "port";
 
@@ -20,23 +21,17 @@ public final class ServerProperties {
 
     public static final String STATS = PREFIX + "stats";
 
-    public static final String WARN = PREFIX + "warn";
-
-    public static final String DEBUG = PREFIX + "debug";
-
     // client side properties
 
     public static final String ADDRESS = PREFIX + "address";
 
-    public static final String DISCOVER = PREFIX + "discover";
-
-    public static final String AUTOSTART = PREFIX + "autostart";
-
+    public static final String AUTOSTART = PREFIX + "false";
+    
     private static final String[][] propertiesList = new String[][] {
-            { NAME, null, "Name of the Ibis server, and all its hubs" },
+            { HUB_ADDRESSES, null, "Comma seperated list of hubs." },
 
-            { HUBS, null, "Comma seperated list of addition hubs to connect to" },
-
+            { START_HUB, "true", "Boolean: if true, also start a hub at the server" },
+            
             { PORT, "8888", "Port which the server binds to" },
 
             { IMPL_PATH, null, "Path used to find service implementations" },
@@ -47,9 +42,6 @@ public final class ServerProperties {
                     "Boolean: if true, statistics are printed to the log regularly." },
             { ADDRESS, null,
                     "Address of the server, or, if applicable, the local hub." },
-            { DISCOVER, "false",
-                    "Boolean: if true, try to locate the server using UDP if it " +
-                    "was not specified using the ibis.server.address property." },
             { AUTOSTART, "false",
                     "Boolean: if true, a server will be automatically created " +
                     "if the server should be running on the local machine," +
@@ -57,8 +49,8 @@ public final class ServerProperties {
 
     };
     
-    public static Properties getHardcodedProperties() {
-        Properties properties = new Properties();
+    public static TypedProperties getHardcodedProperties() {
+        TypedProperties properties = new TypedProperties();
 
         for (String[] element : propertiesList) {
             if (element[1] != null) {

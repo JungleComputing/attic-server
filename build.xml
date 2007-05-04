@@ -1,80 +1,76 @@
-<project 
-    name="ibis-server" 
-    default="build" 
-    basedir=".">
+<project name="ibis-server" default="build" basedir=".">
 
-    <description>
+	<description>
         Build file for Ibis-Server
     </description>
 
-    <!-- import environment properties -->
-    <property environment="env"/>
-	
-	
-    <property name="jar-file" value="ibis-server.jar"/>
-
-    <!-- create the class path. Consists of all external jars -->
-    <path id="class_path">
-        <fileset dir="external">
-            <include name="*.jar" />
-        </fileset>
-    </path>
-
-    <target name="build" depends="clean, compile">
-    </target>
-
-    <target name="init">
-        <tstamp />
-
-        <mkdir dir="tmp" />
-        <mkdir dir="lib" />
-    </target>
+	<!-- import environment properties -->
+	<property environment="env" />
 
 
-    <target name="javadoc" 
-        depends="init" 
-        description="generate all javadocs">
+	<property name="jar-file" value="ibis-server.jar" />
 
-        <javadoc destdir="javadoc" 
-            access="public"
-            classpathref="class_path"
-            packagenames="ibis.*"
-            sourcepath="src" 
-            overview="src/overview.html">
-            <link href="http://java.sun.com/j2se/1.5.0/docs/api/" />
-        </javadoc>
-    </target>
+	<!-- create the class path. Consists of all external jars -->
+	<path id="class_path">
+		<fileset dir="external">
+			<include name="*.jar" />
+		</fileset>
+	</path>
 
-    <target name="compile" 
-        depends="init" 
-        description="build jar file">
+	<target name="build" depends="clean, compile">
+	</target>
 
-        <!-- Compile the java code from src into tmp -->
-        <javac srcdir="src" 
-            destdir="tmp" 
-            debug="on"
-            classpathref="class_path" 
-            />
-    	
-    	<copy todir="tmp">
-    	     <fileset dir="." includes="resources/*"/>
-   	</copy>
+	<target name="init">
+		<tstamp />
 
-        <jar destfile="lib/${jar-file}" basedir="tmp">         	
-        </jar>
+		<mkdir dir="tmp" />
+		<mkdir dir="lib" />
+	</target>
 
-        <!-- add external stuff to lib -->
-        <copy todir="lib">
-            <fileset dir="external" />
-        </copy>
 
-        <delete dir="tmp" />
-    </target>
+	<target name="javadoc" depends="init" description="generate all javadocs">
 
-    <target name="clean" description="clean up">
-        <delete dir="tmp" />
-        <delete dir="lib" />
-        <delete dir="javadoc" />
-    </target>
+		<javadoc destdir="javadoc" access="public" classpathref="class_path" packagenames="ibis.*" sourcepath="src" overview="src/overview.html">
+			<link href="http://java.sun.com/j2se/1.5.0/docs/api/" />
+		</javadoc>
+	</target>
+
+	<target name="compile" depends="init" description="build jar file">
+
+		<!-- Compile the java code from src into tmp -->
+		<javac srcdir="src" destdir="tmp" debug="on" classpathref="class_path" />
+
+		<copy todir="tmp">
+			<fileset dir="." includes="resources/*" />
+		</copy>
+
+		<jar 
+			destfile="lib/${jar-file}" 
+			basedir="tmp" 
+			includes="ibis/server/*.class">
+		</jar>
+
+		<jar 
+			destfile="lib/ibis-poolinfo.jar" 
+			basedir="tmp" 
+			includes="ibis/server/poolInfo/*">
+			<manifest>
+				<attribute name="Ibis-Service" value="ibis.server.poolInfo.Service" />
+			</manifest>
+		</jar>
+
+		<!-- add external stuff to lib -->
+		<copy todir="lib">
+			<fileset dir="external" />
+		</copy>
+
+		<delete dir="tmp" />
+	</target>
+
+	<target name="clean" description="clean up">
+		<delete dir="tmp" />
+		<delete dir="lib" />
+		<delete dir="javadoc" />
+	</target>
 
 </project>
