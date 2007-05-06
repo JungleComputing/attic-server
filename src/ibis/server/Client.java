@@ -47,27 +47,18 @@ public class Client {
 
     public static VirtualSocketAddress getServiceAddress(int port,
             Properties properties) throws IOException {
-        TypedProperties defaultProperties = ServerProperties
+        TypedProperties typedProperties = ServerProperties
                 .getHardcodedProperties();
-        TypedProperties typedProperties = new TypedProperties(properties);
+        typedProperties.addProperties(properties);
 
-        String serverAddressString = properties
+        String serverAddressString = typedProperties
                 .getProperty(ServerProperties.ADDRESS);
         if (serverAddressString == null) {
             throw new IOException(ServerProperties.ADDRESS
                     + " undefined, cannot locate server");
         }
 
-        int defaultPort;
-        String defaultPortString = properties
-                .getProperty(ServerProperties.PORT);
-
-        if (defaultPortString == null) {
-            defaultPort = defaultProperties
-                    .getIntProperty(ServerProperties.PORT);
-        } else {
-            defaultPort = typedProperties.getIntProperty(ServerProperties.PORT);
-        }
+        int defaultPort = typedProperties.getIntProperty(ServerProperties.PORT);
 
         DirectSocketAddress serverMachine = createAddressFromString(
                 serverAddressString, defaultPort);
@@ -77,14 +68,18 @@ public class Client {
 
     public static synchronized VirtualSocketFactory getFactory(
             Properties properties) throws InitializationException {
+        if (properties == null) {
+            properties = new Properties();
+        }
         if (factory == null) {
             Properties smartProperties = new Properties();
             smartProperties.put(SmartSocketsProperties.DISCOVERY_ALLOWED,
                     "false");
             String server = properties.getProperty(ServerProperties.ADDRESS);
             if (server != null) {
-                String hubs = properties.getProperty(ServerProperties.HUB_ADDRESSES);
-                if (hubs == null){
+                String hubs = properties
+                        .getProperty(ServerProperties.HUB_ADDRESSES);
+                if (hubs == null) {
                     hubs = server;
                 } else {
                     hubs = hubs + "," + server;

@@ -5,6 +5,8 @@
 #classpath and bootclasspath for Ibis given the location of a Ibis
 #installation, specified in the $IBIS_HOME environment variable.
 
+IBIS_HOME=$IBIS_SERVER_HOME
+
 # Check setting of IBIS_HOME
 if [ -z "$IBIS_HOME" ];  then
     echo "please set IBIS_HOME to the location of your Ibis installation" 1>&2

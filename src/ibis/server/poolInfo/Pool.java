@@ -2,7 +2,11 @@ package ibis.server.poolInfo;
 
 import java.util.ArrayList;
 
+import org.apache.log4j.Logger;
+
 public final class Pool {
+    
+    private static final Logger logger = Logger.getLogger(Pool.class);
     
     private int size;
     
@@ -17,8 +21,44 @@ public final class Pool {
     }
 
     public synchronized int join(String hostName, String clusterName, int size) {
-        // TODO Auto-generated method stub
-        return 0;
+        if (size <= 0) {
+            return Service.RESULT_INVALID_SIZE;
+        }
+        
+        //set size if unset
+        if (this.size == -1) {
+            this.size = size;
+        }
+        
+        //pool is of different size
+        if (size != this.size) {
+            return Service.RESULT_UNEQUAL_SIZE;
+        }
+        
+        //pool is full
+        if (hostnames.size() >= size) {
+            return Service.RESULT_POOL_CLOSED;
+        }
+        
+        
+        int rank = hostnames.size();
+        hostnames.add(hostName);
+        clusterNames.add(clusterName);
+        
+        if (hostnames.size() >= size) {
+            notifyAll();
+        }
+        
+        //wait for everyone else to join too
+        while (hostnames.size() < size) {
+            try {
+                wait();
+            } catch (InterruptedException e) {
+                //IGNORE
+            }
+        }
+        
+        return rank;
     }
 
     public synchronized String[] getHostnames() {

@@ -17,9 +17,6 @@ import ibis.smartsockets.virtual.VirtualSocketFactory;
 
 public final class Server {
 
-    // NOT the name of this class but the entire registry package instead
-    private static final Logger logger = Logger.getLogger("ibis.server");
-
     private final VirtualSocketFactory virtualSocketFactory;
 
     private final ArrayList<Service> services;
@@ -32,7 +29,16 @@ public final class Server {
         typedProperties.loadConfig("ibis.properties", "ibis.properties.file");
         typedProperties.addProperties(properties);
 
-        typedProperties.printProperties(System.err, "ibis");
+        //Init ibis.server logger
+        Logger logger = Logger.getLogger("ibis.server");
+        Level level = Level.toLevel(typedProperties
+                .getProperty(ServerProperties.LOG_LEVEL));
+        Log.initLog4J(logger, level);
+
+        if (logger.isInfoEnabled()) {
+            TypedProperties serverProperties = typedProperties.filter("ibis.server");
+            logger.info("Settings for server:\n" + serverProperties);
+        }
 
         // create the virtual socket factory
         Properties smartProperties = new Properties();
@@ -66,7 +72,7 @@ public final class Server {
         for (int i = 0; i < serviceClassList.length; i++) {
             try {
                 Service service = (Service) serviceClassList[i].getConstructor(
-                        new Class[] { Properties.class,
+                        new Class[] { TypedProperties.class,
                                 VirtualSocketFactory.class }).newInstance(
                         new Object[] { typedProperties, virtualSocketFactory });
                 logger.debug("created new service: " + service);
@@ -127,8 +133,6 @@ public final class Server {
         }
 
         public void run() {
-            logger.debug("shutdown hook triggered");
-
             server.end();
         }
     }
@@ -138,10 +142,6 @@ public final class Server {
      */
     public static void main(String[] args) {
         Properties properties = new Properties();
-
-        // add an appender to this package if needed
-        Log.initLog4J(logger);
-        Level logLevel = Level.INFO;
 
         for (int i = 0; i < args.length; i++) {
             if (args[i].equalsIgnoreCase("--no-hub")) {
@@ -157,9 +157,9 @@ public final class Server {
             } else if (args[i].equalsIgnoreCase("--stats")) {
                 properties.setProperty(ServerProperties.STATS, "true");
             } else if (args[i].equalsIgnoreCase("--warn")) {
-                logLevel = Level.WARN;
+                properties.setProperty(ServerProperties.LOG_LEVEL, "WARN");
             } else if (args[i].equalsIgnoreCase("--debug")) {
-                logLevel = Level.DEBUG;
+                properties.setProperty(ServerProperties.LOG_LEVEL, "DEBUG");
             } else if (args[i].equalsIgnoreCase("--help")
                     || args[i].equalsIgnoreCase("-h")
                     || args[i].equalsIgnoreCase("/?")) {
@@ -175,14 +175,12 @@ public final class Server {
             }
         }
 
-        logger.setLevel(logLevel);
-
         Server server = null;
         try {
             server = new Server(properties);
-            logger.info("Started " + server.toString());
+            System.out.println("Started " + server.toString());
         } catch (Throwable t) {
-            logger.error("Could not start Server", t);
+            System.err.println("Could not start Server: " + t);
             System.exit(1);
         }
 

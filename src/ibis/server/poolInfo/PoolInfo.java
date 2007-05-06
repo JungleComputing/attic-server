@@ -59,9 +59,9 @@ public class PoolInfo {
                     + " not set");
         }
 
-        VirtualSocketFactory factory = Client.getFactory(properties);
+        VirtualSocketFactory factory = Client.getFactory(typedProperties);
         VirtualSocketAddress serviceAddress = Client.getServiceAddress(
-                Service.VIRTUAL_PORT, properties);
+                Service.VIRTUAL_PORT, typedProperties);
 
         VirtualSocket socket = factory.createClientSocket(serviceAddress,
                 CONNECTION_TIMEOUT, null);
@@ -76,19 +76,21 @@ public class PoolInfo {
         out.writeInt(size);
 
         out.flush();
+        
+        rank = in.readInt();
 
-        int resultCode = in.readByte();
-
-        if (resultCode == Service.RESULT_INVALID_SIZE) {
-            throw new Exception("Server: pool exists with different pool size");
-        } else if (resultCode == Service.RESULT_POOL_CLOSED) {
+        if (rank == Service.RESULT_INVALID_SIZE) {
+            throw new Exception("Server: invalid size: " + size);
+        } else if (rank == Service.RESULT_POOL_CLOSED) {
             throw new Exception("Server: cannot join pool " + poolName
                     + " : pool already closed");
-        } else if (resultCode != Service.RESULT_OK) {
-            throw new Exception("Unknown result: " + resultCode);
+        } else if (rank == Service.RESULT_UNEQUAL_SIZE) {
+            throw new Exception("Server: cannot join pool " + poolName
+                    + " : pool exists with different size");
+        } else if (rank < 0) {
+            throw new Exception("Unknown result: " + rank);
         }
 
-        rank = in.readInt();
         hostnames = new String[size];
         for (int i = 0; i < size; i++) {
             hostnames[i] = in.readUTF();
@@ -202,5 +204,20 @@ public class PoolInfo {
                     + clusters[i] + "\n";
         }
         return result;
+    }
+    
+    public static void main(String[] args) {
+        String host = args[0];
+        String cluster = args[1];
+        
+        PoolInfo info;
+        try {
+            info = new PoolInfo(host, cluster, null);
+        } catch (Exception e) {
+           e.printStackTrace(System.err);
+           return;
+        }
+        
+        System.err.println(info.toString());
     }
 }

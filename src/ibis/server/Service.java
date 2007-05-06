@@ -5,7 +5,7 @@ package ibis.server;
  * Interface for an Ibis Service. Any service which
  *  want to be automatiscally started by the ibis-server, needs to implement
  *  this interface. It should also have a constructor: 
- *  Service(Properties properties, VirtualSocketFactory factory)
+ *  Service(TypedProperties properties, VirtualSocketFactory factory)
  */
 public interface Service {
     
