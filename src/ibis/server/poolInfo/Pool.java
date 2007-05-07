@@ -2,11 +2,7 @@ package ibis.server.poolInfo;
 
 import java.util.ArrayList;
 
-import org.apache.log4j.Logger;
-
 public final class Pool {
-    
-    private static final Logger logger = Logger.getLogger(Pool.class);
     
     private int size;
     

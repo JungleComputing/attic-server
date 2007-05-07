@@ -13,6 +13,7 @@ import java.io.BufferedOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.util.Properties;
 
 /**
@@ -38,26 +39,41 @@ public class PoolInfo {
 
     private final String[] clusters;
 
-    PoolInfo(String hostname, String clusterName, Properties properties)
+    PoolInfo(Properties properties, boolean addDefaultConfigProperties)
             throws Exception {
 
         TypedProperties typedProperties = PoolInfoProperties
                 .getHardcodedProperties();
 
-        typedProperties.loadConfig("ibis.properties", "ibis.properties.file");
+        if (addDefaultConfigProperties) {
+            typedProperties.loadDefaultConfigProperties();
+        }
 
         typedProperties.addProperties(properties);
 
-        size = typedProperties.getIntProperty(PoolInfoProperties.SIZE, 0);
-        if (size <= 0) {
-            throw new Exception("invalid or unknown pool size: " + size);
+        try {
+            size = typedProperties.getIntProperty(PoolInfoProperties.SIZE);
+        } catch (NumberFormatException e) {
+            throw new Exception("Cannot create PoolInfo, required property "
+                    + PoolInfoProperties.SIZE + " not set or invalid");
         }
 
         poolName = typedProperties.getProperty(PoolInfoProperties.NAME);
         if (poolName == null) {
-            throw new Exception("Required property " + PoolInfoProperties.NAME
-                    + " not set");
+            throw new Exception("Cannot create PoolInfo, required property "
+                    + PoolInfoProperties.NAME + " not set");
         }
+
+        String hostname = typedProperties
+                .getProperty(PoolInfoProperties.HOSTNAME);
+
+        if (hostname == null) {
+            InetAddress address = InetAddress.getLocalHost();
+            hostname = address.getCanonicalHostName();
+        }
+
+        String cluster = typedProperties
+                .getProperty(PoolInfoProperties.CLUSTER);
 
         VirtualSocketFactory factory = Client.getFactory(typedProperties);
         VirtualSocketAddress serviceAddress = Client.getServiceAddress(
@@ -72,11 +88,11 @@ public class PoolInfo {
 
         out.writeUTF(poolName);
         out.writeUTF(hostname);
-        out.writeUTF(clusterName);
+        out.writeUTF(cluster);
         out.writeInt(size);
 
         out.flush();
-        
+
         rank = in.readInt();
 
         if (rank == Service.RESULT_INVALID_SIZE) {
@@ -205,19 +221,16 @@ public class PoolInfo {
         }
         return result;
     }
-    
+
     public static void main(String[] args) {
-        String host = args[0];
-        String cluster = args[1];
-        
         PoolInfo info;
         try {
-            info = new PoolInfo(host, cluster, null);
+            info = new PoolInfo(null, true);
         } catch (Exception e) {
-           e.printStackTrace(System.err);
-           return;
+            e.printStackTrace(System.err);
+            return;
         }
-        
+
         System.err.println(info.toString());
     }
 }

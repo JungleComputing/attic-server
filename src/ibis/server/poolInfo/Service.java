@@ -15,7 +15,6 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Properties;
 
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
@@ -46,7 +45,7 @@ public final class Service implements ibis.server.Service, Runnable {
 
         ThreadPool.createNew(this, "PoolInfoService");
         
-        events = properties.booleanProperty(ServerProperties.EVENTS);
+        events = properties.getBooleanProperty(ServerProperties.EVENTS);
         
         Level level = Level.toLevel(properties
                 .getProperty(ServerProperties.LOG_LEVEL, "INFO"));

@@ -21,12 +21,16 @@ public final class Server {
 
     private final ArrayList<Service> services;
 
-    public Server(Properties properties) throws Exception {
+    public Server(Properties properties, boolean addDefaultConfigProperties) throws Exception {
 
         // load properties from config files and such
         TypedProperties typedProperties = ServerProperties
                 .getHardcodedProperties();
-        typedProperties.loadConfig("ibis.properties", "ibis.properties.file");
+        
+        if (addDefaultConfigProperties) {
+            typedProperties.loadDefaultConfigProperties();
+        }
+  
         typedProperties.addProperties(properties);
 
         //Init ibis.server logger
@@ -52,7 +56,7 @@ public final class Server {
             smartProperties.put(SmartSocketsProperties.HUB_ADDRESSES, hubs);
         }
 
-        if (typedProperties.booleanProperty(ServerProperties.START_HUB)) {
+        if (typedProperties.getBooleanProperty(ServerProperties.START_HUB)) {
             smartProperties.put(SmartSocketsProperties.START_HUB, "true");
             smartProperties.put(SmartSocketsProperties.HUB_DELEGATE, "true");
         }
@@ -177,7 +181,7 @@ public final class Server {
 
         Server server = null;
         try {
-            server = new Server(properties);
+            server = new Server(properties, true);
             System.out.println("Started " + server.toString());
         } catch (Throwable t) {
             System.err.println("Could not start Server: " + t);

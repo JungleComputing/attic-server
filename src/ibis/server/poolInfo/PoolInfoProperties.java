@@ -6,17 +6,29 @@ import java.util.Map;
 import java.util.TreeMap;
 
 public final class PoolInfoProperties {
+    
+    public static final String IBIS_PREFIX = "ibis.";
+    
+    public static final String HOSTNAME = IBIS_PREFIX + "hostname";
+    
+    public static final String CLUSTER = IBIS_PREFIX + "cluster";
 
-    public static final String PREFIX = "ibis.pool.";
+    public static final String POOL_PREFIX = "ibis.pool.";
 
-    public static final String NAME = PREFIX + "name";
+    public static final String NAME = POOL_PREFIX + "name";
 
-    public static final String SIZE = PREFIX + "size";
+    public static final String SIZE = POOL_PREFIX + "size";
 
     private static final String[][] propertiesList = new String[][] {
             { NAME, null, "Name of the pool" },
 
-            { SIZE, null, "Int: size of the pool" }, };
+            { SIZE, null, "Int: size of the pool" },
+            
+            { HOSTNAME, null, "Hostname to use as identifier. Default is FQDN of this machine"},
+            
+            { CLUSTER, "unknown", "Cluster of the local machine"},
+    
+    };
 
     public static TypedProperties getHardcodedProperties() {
         TypedProperties properties = new TypedProperties();
