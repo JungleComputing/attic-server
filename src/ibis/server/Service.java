@@ -13,7 +13,7 @@ public interface Service {
     /**
      * Called when the server stops.
      */
-    void end();
+    void end(boolean waitUntilIdle);
     
 
 }

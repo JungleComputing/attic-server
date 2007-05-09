@@ -17,9 +17,9 @@ public final class ServerProperties {
 
     public static final String IMPL_PATH = PREFIX + "impl.path";
 
-    public static final String EVENTS = PREFIX + "events";
+    public static final String LOG_EVENTS = PREFIX + "log.events";
 
-    public static final String STATS = PREFIX + "stats";
+    public static final String LOG_STATS = PREFIX + "log.stats";
     
     public static final String LOG_LEVEL = PREFIX + "log.level";
 
@@ -27,8 +27,6 @@ public final class ServerProperties {
 
     public static final String ADDRESS = PREFIX + "address";
 
-    public static final String AUTOSTART = PREFIX + "autostart";
-    
     private static final String[][] propertiesList = new String[][] {
             { HUB_ADDRESSES, null, "Comma seperated list of hubs." },
 
@@ -38,18 +36,14 @@ public final class ServerProperties {
 
             { IMPL_PATH, null, "Path used to find service implementations" },
 
-            { EVENTS, "false",
+            { LOG_EVENTS, "false",
                     "Boolean: if true, events of services are printed to the log." },
-            { STATS, "false",
+            { LOG_STATS, "false",
                     "Boolean: if true, statistics are printed to the log regularly." },
             { LOG_LEVEL, "INFO",
                     "determines level of verbosity (TRACE,DEBUG,INFO,WARN,ERROR or FATAL) of the server log" },
             { ADDRESS, null,
-                    "Address of the server, or, if applicable, the local hub." },
-            { AUTOSTART, "false",
-                    "Boolean: if true, a server will be automatically created " +
-                    "if the server should be running on the local machine," +
-                    " but is not." },
+                    "Address of the server" },
 
     };
     

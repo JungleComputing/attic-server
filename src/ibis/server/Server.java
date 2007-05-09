@@ -102,9 +102,9 @@ public final class Server {
     /**
      * Stops all services
      */
-    public void end() {
+    public void end(boolean waitUntilIdle) {
         for (Service service : services) {
-            service.end();
+            service.end(waitUntilIdle);
         }
     }
 
@@ -137,7 +137,7 @@ public final class Server {
         }
 
         public void run() {
-            server.end();
+            server.end(false);
         }
     }
 
@@ -157,9 +157,9 @@ public final class Server {
                 i++;
                 properties.put(ServerProperties.PORT, args[i]);
             } else if (args[i].equalsIgnoreCase("--events")) {
-                properties.setProperty(ServerProperties.EVENTS, "true");
+                properties.setProperty(ServerProperties.LOG_EVENTS, "true");
             } else if (args[i].equalsIgnoreCase("--stats")) {
-                properties.setProperty(ServerProperties.STATS, "true");
+                properties.setProperty(ServerProperties.LOG_STATS, "true");
             } else if (args[i].equalsIgnoreCase("--warn")) {
                 properties.setProperty(ServerProperties.LOG_LEVEL, "WARN");
             } else if (args[i].equalsIgnoreCase("--debug")) {

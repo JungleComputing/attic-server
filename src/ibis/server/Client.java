@@ -1,6 +1,8 @@
 package ibis.server;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 
 import org.apache.log4j.Logger;
@@ -19,7 +21,9 @@ import ibis.util.TypedProperties;
 public class Client {
     private static final Logger logger = Logger.getLogger(Client.class);
 
-    private static VirtualSocketFactory factory = null;
+    private static VirtualSocketFactory defaultFactory = null;
+
+    private static Map<String, VirtualSocketFactory> factories = new HashMap<String, VirtualSocketFactory>();
 
     private static DirectSocketAddress createAddressFromString(
             String serverString, int defaultPort) throws IOException {
@@ -68,27 +72,49 @@ public class Client {
 
     public static synchronized VirtualSocketFactory getFactory(
             Properties properties) throws InitializationException {
+        String hubs;
+        logger.debug("getting factory for a client");
+
         if (properties == null) {
-            properties = new Properties();
-        }
-        if (factory == null) {
-            Properties smartProperties = new Properties();
-            smartProperties.put(SmartSocketsProperties.DISCOVERY_ALLOWED,
-                    "false");
+            hubs = null;
+        } else {
+            hubs = properties.getProperty(ServerProperties.HUB_ADDRESSES);
+
             String server = properties.getProperty(ServerProperties.ADDRESS);
             if (server != null) {
-                String hubs = properties
-                        .getProperty(ServerProperties.HUB_ADDRESSES);
                 if (hubs == null) {
                     hubs = server;
                 } else {
                     hubs = hubs + "," + server;
                 }
-                smartProperties.put(SmartSocketsProperties.HUB_ADDRESSES, hubs);
             }
+        }
+
+        if (hubs == null) {
+            if (defaultFactory == null) {
+                logger.debug("creating default factory");
+                Properties smartProperties = new Properties();
+                smartProperties.put(SmartSocketsProperties.DISCOVERY_ALLOWED,
+                        "false");
+                defaultFactory = VirtualSocketFactory.createSocketFactory(
+                        smartProperties, true);
+            }
+            return defaultFactory;
+        }
+
+        VirtualSocketFactory factory = factories.get(hubs);
+
+        if (factory == null) {
+            logger.debug("creating factory with hub list: " + hubs);
+            Properties smartProperties = new Properties();
+            smartProperties.put(SmartSocketsProperties.DISCOVERY_ALLOWED,
+                    "false");
+            smartProperties.put(SmartSocketsProperties.HUB_ADDRESSES, hubs);
 
             factory = VirtualSocketFactory.createSocketFactory(smartProperties,
                     true);
+
+            factories.put(hubs, factory);
         }
 
         return factory;

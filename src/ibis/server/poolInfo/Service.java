@@ -45,7 +45,7 @@ public final class Service implements ibis.server.Service, Runnable {
 
         ThreadPool.createNew(this, "PoolInfoService");
         
-        events = properties.getBooleanProperty(ServerProperties.EVENTS);
+        events = properties.getBooleanProperty(ServerProperties.LOG_EVENTS);
         
         Level level = Level.toLevel(properties
                 .getProperty(ServerProperties.LOG_LEVEL, "INFO"));
@@ -55,7 +55,7 @@ public final class Service implements ibis.server.Service, Runnable {
                 + VIRTUAL_PORT);
     }
 
-    public void end() {
+    public void end(boolean waitUntilIdle) {
         // TODO Auto-generated method stub
 
     }
