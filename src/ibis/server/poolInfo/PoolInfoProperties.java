@@ -15,14 +15,15 @@ public final class PoolInfoProperties {
 
     public static final String POOL_PREFIX = "ibis.pool.";
 
-    public static final String NAME = POOL_PREFIX + "name";
+    public static final String POOL_NAME = POOL_PREFIX + "name";
 
-    public static final String SIZE = POOL_PREFIX + "size";
+    public static final String POOL_SIZE = POOL_PREFIX + "size";
 
     private static final String[][] propertiesList = new String[][] {
-            { NAME, null, "Name of the pool" },
+            { POOL_NAME, null, "Name of the pool" },
+            
 
-            { SIZE, null, "Int: size of the pool" },
+            { POOL_SIZE, null, "Int: size of the pool" },
             
             { HOSTNAME, null, "Hostname to use as identifier. Default is FQDN of this machine"},
             

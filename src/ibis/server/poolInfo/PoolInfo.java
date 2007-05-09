@@ -39,7 +39,7 @@ public class PoolInfo {
 
     private final String[] clusters;
 
-    PoolInfo(Properties properties, boolean addDefaultConfigProperties)
+    public PoolInfo(Properties properties, boolean addDefaultConfigProperties)
             throws Exception {
 
         TypedProperties typedProperties = PoolInfoProperties
@@ -52,16 +52,16 @@ public class PoolInfo {
         typedProperties.addProperties(properties);
 
         try {
-            size = typedProperties.getIntProperty(PoolInfoProperties.SIZE);
+            size = typedProperties.getIntProperty(PoolInfoProperties.POOL_SIZE);
         } catch (NumberFormatException e) {
             throw new Exception("Cannot create PoolInfo, required property "
-                    + PoolInfoProperties.SIZE + " not set or invalid");
+                    + PoolInfoProperties.POOL_SIZE + " not set or invalid");
         }
 
-        poolName = typedProperties.getProperty(PoolInfoProperties.NAME);
+        poolName = typedProperties.getProperty(PoolInfoProperties.POOL_NAME);
         if (poolName == null) {
             throw new Exception("Cannot create PoolInfo, required property "
-                    + PoolInfoProperties.NAME + " not set");
+                    + PoolInfoProperties.POOL_NAME + " not set");
         }
 
         String hostname = typedProperties

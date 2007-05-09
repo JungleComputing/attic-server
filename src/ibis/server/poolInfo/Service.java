@@ -70,6 +70,13 @@ public final class Service implements ibis.server.Service, Runnable {
 
         return pool;
     }
+    
+    /**
+     * Called more than once, but doesn't matter
+     */
+    private synchronized void removePool(String poolName) {
+        pools.remove(poolName);
+    }
 
     public void run() {
         while (true) {
@@ -105,6 +112,9 @@ public final class Service implements ibis.server.Service, Runnable {
 
                 // blocks until pool is complete
                 int rank = pool.join(hostName, clusterName, size);
+                
+                //remove pool from list of pools...
+                removePool(poolName);
 
                 out.writeInt(rank);
                 if (rank >= 0) {
