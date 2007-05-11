@@ -91,7 +91,7 @@ public final class Server {
      * Returns the local address of this server as a string
      */
     public String getLocalAddress() {
-        return virtualSocketFactory.getVirtualAddressAsString();
+        return virtualSocketFactory.getLocalHost().toString();
     }
 
     public String toString() {
