@@ -15,5 +15,4 @@ public interface Service {
      */
     void end(boolean waitUntilIdle);
     
-
 }

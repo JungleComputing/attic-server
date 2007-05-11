@@ -17,9 +17,9 @@ public final class ServerProperties {
 
     public static final String IMPL_PATH = PREFIX + "impl.path";
 
-    public static final String LOG_EVENTS = PREFIX + "log.events";
+    public static final String PRINT_EVENTS = PREFIX + "print.events";
 
-    public static final String LOG_STATS = PREFIX + "log.stats";
+    public static final String PRINT_STATS = PREFIX + "print.stats";
     
     public static final String LOG_LEVEL = PREFIX + "log.level";
 
@@ -36,10 +36,10 @@ public final class ServerProperties {
 
             { IMPL_PATH, null, "Path used to find service implementations" },
 
-            { LOG_EVENTS, "false",
-                    "Boolean: if true, events of services are printed to the log." },
-            { LOG_STATS, "false",
-                    "Boolean: if true, statistics are printed to the log regularly." },
+            { PRINT_EVENTS, "false",
+                    "Boolean: if true, events of services are printed to standard out." },
+            { PRINT_STATS, "false",
+                    "Boolean: if true, statistics are printed to standard out regularly." },
             { LOG_LEVEL, "INFO",
                     "determines level of verbosity (TRACE,DEBUG,INFO,WARN,ERROR or FATAL) of the server log" },
             { ADDRESS, null,

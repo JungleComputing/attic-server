@@ -35,7 +35,7 @@ public final class Service implements ibis.server.Service, Runnable {
 
     private final Map<String, Pool> pools;
     
-    private final boolean events;
+    private final boolean printEvents;
 
     public Service(TypedProperties properties, VirtualSocketFactory factory)
             throws IOException {
@@ -45,13 +45,13 @@ public final class Service implements ibis.server.Service, Runnable {
 
         ThreadPool.createNew(this, "PoolInfoService");
         
-        events = properties.getBooleanProperty(ServerProperties.LOG_EVENTS);
+        printEvents = properties.getBooleanProperty(ServerProperties.PRINT_EVENTS);
         
         Level level = Level.toLevel(properties
                 .getProperty(ServerProperties.LOG_LEVEL, "INFO"));
         Log.initLog4J(logger, level);
 
-        logger.info("Started pool info" + " service on virtual port "
+        logger.debug("Started PoolInfo service on virtual port "
                 + VIRTUAL_PORT);
     }
 
@@ -60,11 +60,11 @@ public final class Service implements ibis.server.Service, Runnable {
 
     }
 
-    private synchronized Pool getPool(String poolName) {
+    private synchronized Pool getPool(String poolName, int size) {
         Pool pool = pools.get(poolName);
 
         if (pool == null) {
-            pool = new Pool();
+            pool = new Pool(poolName, size, printEvents);
             pools.put(poolName, pool);
         }
 
@@ -76,6 +76,10 @@ public final class Service implements ibis.server.Service, Runnable {
      */
     private synchronized void removePool(String poolName) {
         pools.remove(poolName);
+    }
+    
+    public String toString() {
+        return "PoolInfo service on virtual port " + VIRTUAL_PORT;
     }
 
     public void run() {
@@ -104,12 +108,8 @@ public final class Service implements ibis.server.Service, Runnable {
                 String clusterName = in.readUTF();
                 int size = in.readInt();
 
-                Pool pool = getPool(poolName);
+                Pool pool = getPool(poolName, size);
                 
-                if (events) {
-                    logger.info(hostName + " in cluster " + clusterName + " is joining pool " + poolName);
-                }
-
                 // blocks until pool is complete
                 int rank = pool.join(hostName, clusterName, size);
                 

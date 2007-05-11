@@ -39,9 +39,9 @@ public final class Server {
                 .getProperty(ServerProperties.LOG_LEVEL));
         Log.initLog4J(logger, level);
 
-        if (logger.isInfoEnabled()) {
+        if (logger.isDebugEnabled()) {
             TypedProperties serverProperties = typedProperties.filter("ibis.server");
-            logger.info("Settings for server:\n" + serverProperties);
+            logger.debug("Settings for server:\n" + serverProperties);
         }
 
         // create the virtual socket factory
@@ -49,7 +49,7 @@ public final class Server {
 
         smartProperties.put(SmartSocketsProperties.DIRECT_PORT, typedProperties
                 .getProperty(ServerProperties.PORT));
-
+        
         String hubs = typedProperties
                 .getProperty(ServerProperties.HUB_ADDRESSES);
         if (hubs != null) {
@@ -79,7 +79,6 @@ public final class Server {
                         new Class[] { TypedProperties.class,
                                 VirtualSocketFactory.class }).newInstance(
                         new Object[] { typedProperties, virtualSocketFactory });
-                logger.debug("created new service: " + service);
                 services.add(service);
             } catch (Throwable e) {
                 logger.warn("Could not create service " + serviceClassList[i]
@@ -96,7 +95,14 @@ public final class Server {
     }
 
     public String toString() {
-        return "Ibis server on " + getLocalAddress();
+        String message = "Ibis server running on " + getLocalAddress() + "\nList of Services:";
+        
+        for (Service service: services) {
+            message += "\n    " + service.toString();
+        }
+        
+        return message;
+        
     }
 
     /**
@@ -157,9 +163,9 @@ public final class Server {
                 i++;
                 properties.put(ServerProperties.PORT, args[i]);
             } else if (args[i].equalsIgnoreCase("--events")) {
-                properties.setProperty(ServerProperties.LOG_EVENTS, "true");
+                properties.setProperty(ServerProperties.PRINT_EVENTS, "true");
             } else if (args[i].equalsIgnoreCase("--stats")) {
-                properties.setProperty(ServerProperties.LOG_STATS, "true");
+                properties.setProperty(ServerProperties.PRINT_STATS, "true");
             } else if (args[i].equalsIgnoreCase("--warn")) {
                 properties.setProperty(ServerProperties.LOG_LEVEL, "WARN");
             } else if (args[i].equalsIgnoreCase("--debug")) {
@@ -182,7 +188,7 @@ public final class Server {
         Server server = null;
         try {
             server = new Server(properties, true);
-            System.out.println("Started " + server.toString());
+            System.out.println(server.toString());
         } catch (Throwable t) {
             System.err.println("Could not start Server: " + t);
             System.exit(1);

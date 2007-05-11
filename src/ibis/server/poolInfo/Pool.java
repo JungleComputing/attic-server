@@ -2,58 +2,73 @@ package ibis.server.poolInfo;
 
 import java.util.ArrayList;
 
+import org.apache.log4j.Logger;
+
 public final class Pool {
-    
-    private int size;
-    
+
+    private static final Logger logger = Logger.getLogger(Pool.class);
+
+    private final String name;
+
+    private final int size;
+
+    private final boolean printEvents;
+
     private ArrayList<String> hostnames;
+
     private ArrayList<String> clusterNames;
-    
-    public Pool() {
-        size = -1;
-        
+
+    public Pool(String name, int size, boolean printEvents) {
+        this.name = name;
+        this.size = size;
+        this.printEvents = printEvents;
+
         hostnames = new ArrayList<String>();
         clusterNames = new ArrayList<String>();
+
+        if (printEvents) {
+            System.out.println("PoolInfo: created new pool \"" + name
+                    + "\" of size " + size);
+        }
     }
 
     public synchronized int join(String hostName, String clusterName, int size) {
         if (size <= 0) {
             return Service.RESULT_INVALID_SIZE;
         }
-        
-        //set size if unset
-        if (this.size == -1) {
-            this.size = size;
-        }
-        
-        //pool is of different size
+
+        // pool is of different size
         if (size != this.size) {
             return Service.RESULT_UNEQUAL_SIZE;
         }
-        
-        //pool is full
+
+        // pool is full
         if (hostnames.size() >= size) {
             return Service.RESULT_POOL_CLOSED;
         }
-        
-        
+
         int rank = hostnames.size();
         hostnames.add(hostName);
         clusterNames.add(clusterName);
-        
+
         if (hostnames.size() >= size) {
             notifyAll();
         }
         
-        //wait for everyone else to join too
+        if (printEvents) {
+            System.out.println("PoolInfo: \"" + hostName + "@" + clusterName
+                    + "\" joins pool \"" + name + "\", rank " + rank + " of " + this.size);
+        }
+
+        // wait for everyone else to join too
         while (hostnames.size() < size) {
             try {
                 wait();
             } catch (InterruptedException e) {
-                //IGNORE
+                // IGNORE
             }
         }
-        
+
         return rank;
     }
 
