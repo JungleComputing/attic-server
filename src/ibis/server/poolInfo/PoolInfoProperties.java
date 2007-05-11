@@ -2,8 +2,8 @@ package ibis.server.poolInfo;
 
 import ibis.util.TypedProperties;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.TreeMap;
 
 public final class PoolInfoProperties {
     
@@ -22,7 +22,6 @@ public final class PoolInfoProperties {
     private static final String[][] propertiesList = new String[][] {
             { POOL_NAME, null, "Name of the pool" },
             
-
             { POOL_SIZE, null, "Int: size of the pool" },
             
             { HOSTNAME, null, "Hostname to use as identifier. Default is FQDN of this machine"},
@@ -44,7 +43,7 @@ public final class PoolInfoProperties {
     }
 
     public static Map<String, String> getDescriptions() {
-        Map<String, String> result = new TreeMap<String, String>();
+        Map<String, String> result = new LinkedHashMap<String, String>();
 
         for (String[] element : propertiesList) {
             result.put(element[0], element[2]);

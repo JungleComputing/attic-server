@@ -2,8 +2,8 @@ package ibis.server;
 
 import ibis.util.TypedProperties;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.TreeMap;
 
 public final class ServerProperties {
 
@@ -60,7 +60,7 @@ public final class ServerProperties {
     }
     
     public static Map<String, String> getDescriptions() {
-        Map<String, String> result = new TreeMap<String, String>();
+        Map<String, String> result = new LinkedHashMap<String, String>();
 
         for (String[] element : propertiesList) {
             result.put(element[0], element[2]);
