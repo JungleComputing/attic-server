@@ -13,76 +13,107 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
 import ibis.smartsockets.SmartSocketsProperties;
+import ibis.smartsockets.direct.DirectSocketAddress;
+import ibis.smartsockets.hub.Hub;
 import ibis.smartsockets.virtual.VirtualSocketFactory;
 
 public final class Server {
 
     private final VirtualSocketFactory virtualSocketFactory;
 
+    private final Hub hub;
+
+    private final DirectSocketAddress address;
+
     private final ArrayList<Service> services;
 
-    public Server(Properties properties, boolean addDefaultConfigProperties) throws Exception {
+    private final boolean hubOnly;
+
+    public Server(Properties properties, boolean addDefaultConfigProperties)
+            throws Exception {
+        services = new ArrayList<Service>();
 
         // load properties from config files and such
         TypedProperties typedProperties = ServerProperties
                 .getHardcodedProperties();
-        
+
         if (addDefaultConfigProperties) {
             typedProperties.loadDefaultConfigProperties();
         }
-  
+
         typedProperties.addProperties(properties);
 
-        //Init ibis.server logger
+        // Init ibis.server logger
         Logger logger = Logger.getLogger("ibis.server");
         Level level = Level.toLevel(typedProperties
                 .getProperty(ServerProperties.LOG_LEVEL));
         Log.initLog4J(logger, level);
 
         if (logger.isDebugEnabled()) {
-            TypedProperties serverProperties = typedProperties.filter("ibis.server");
+            TypedProperties serverProperties = typedProperties
+                    .filter("ibis.server");
             logger.debug("Settings for server:\n" + serverProperties);
         }
 
         // create the virtual socket factory
-        Properties smartProperties = new Properties();
+        ibis.smartsockets.util.TypedProperties smartProperties = new ibis.smartsockets.util.TypedProperties();
 
-        smartProperties.put(SmartSocketsProperties.DIRECT_PORT, typedProperties
-                .getProperty(ServerProperties.PORT));
-        
         String hubs = typedProperties
                 .getProperty(ServerProperties.HUB_ADDRESSES);
         if (hubs != null) {
             smartProperties.put(SmartSocketsProperties.HUB_ADDRESSES, hubs);
         }
 
-        if (typedProperties.getBooleanProperty(ServerProperties.START_HUB)) {
-            smartProperties.put(SmartSocketsProperties.START_HUB, "true");
-            smartProperties.put(SmartSocketsProperties.HUB_DELEGATE, "true");
-        }
+        hubOnly = typedProperties.getBooleanProperty(ServerProperties.HUB_ONLY);
 
-        virtualSocketFactory = VirtualSocketFactory.createSocketFactory(
-                smartProperties, true);
+        if (hubOnly) {
+            virtualSocketFactory = null;
 
-        // Obtain a list of Services
-        String implPath = typedProperties
-                .getProperty(ServerProperties.IMPL_PATH);
-        ClassLister clstr = ClassLister.getClassLister(implPath);
-        List<Class> compnts = clstr.getClassList("Ibis-Service", Service.class);
-        Class[] serviceClassList = compnts.toArray(new Class[compnts.size()]);
+            smartProperties.put(SmartSocketsProperties.HUB_PORT,
+                    typedProperties.getProperty(ServerProperties.PORT));
 
-        services = new ArrayList<Service>();
+            hub = new Hub(smartProperties);
+            address = hub.getHubAddress();
 
-        for (int i = 0; i < serviceClassList.length; i++) {
-            try {
-                Service service = (Service) serviceClassList[i].getConstructor(
-                        new Class[] { TypedProperties.class,
-                                VirtualSocketFactory.class }).newInstance(
-                        new Object[] { typedProperties, virtualSocketFactory });
-                services.add(service);
-            } catch (Throwable e) {
-                logger.warn("Could not create service " + serviceClassList[i]
-                        + ":", e);
+        } else {
+            hub = null;
+
+            smartProperties.put(SmartSocketsProperties.DIRECT_PORT,
+                    typedProperties.getProperty(ServerProperties.PORT));
+
+            if (typedProperties.getBooleanProperty(ServerProperties.START_HUB)) {
+                smartProperties.put(SmartSocketsProperties.START_HUB, "true");
+                smartProperties
+                        .put(SmartSocketsProperties.HUB_DELEGATE, "true");
+            }
+
+            virtualSocketFactory = VirtualSocketFactory.createSocketFactory(
+                    smartProperties, true);
+            address = virtualSocketFactory.getLocalHost();
+
+            // Obtain a list of Services
+            String implPath = typedProperties
+                    .getProperty(ServerProperties.IMPL_PATH);
+            ClassLister clstr = ClassLister.getClassLister(implPath);
+            List<Class> compnts = clstr.getClassList("Ibis-Service",
+                    Service.class);
+            Class[] serviceClassList = compnts
+                    .toArray(new Class[compnts.size()]);
+
+            for (int i = 0; i < serviceClassList.length; i++) {
+                try {
+                    Service service = (Service) serviceClassList[i]
+                            .getConstructor(
+                                    new Class[] { TypedProperties.class,
+                                            VirtualSocketFactory.class })
+                            .newInstance(
+                                    new Object[] { typedProperties,
+                                            virtualSocketFactory });
+                    services.add(service);
+                } catch (Throwable e) {
+                    logger.warn("Could not create service "
+                            + serviceClassList[i] + ":", e);
+                }
             }
         }
     }
@@ -91,18 +122,31 @@ public final class Server {
      * Returns the local address of this server as a string
      */
     public String getLocalAddress() {
-        return virtualSocketFactory.getLocalHost().toString();
+        return address.toString();
+    }
+
+    public DirectSocketAddress[] getHubs() {
+        if (hubOnly) {
+            return hub.knownHubs();
+        } else {
+            return virtualSocketFactory.getKnownHubs();
+        }
     }
 
     public String toString() {
-        String message = "Ibis server running on " + getLocalAddress() + "\nList of Services:";
-        
-        for (Service service: services) {
+        if (hubOnly) {
+            return "Hub running on " + getLocalAddress();
+        }
+
+        String message = "Ibis server running on " + getLocalAddress()
+                + "\nList of Services:";
+
+        for (Service service : services) {
             message += "\n    " + service.toString();
         }
-        
+
         return message;
-        
+
     }
 
     /**
@@ -120,9 +164,11 @@ public final class Server {
         out.println("USAGE: ibis-server [OPTIONS]");
         out.println();
         out.println("--no-hub\t\t\tDo not start a hub");
+        out
+                .println("--hub-only\t\t\tOnly start a hub, not the rest of the server");
         out.println("--hub-addresses HUB[,HUB]\tAdditional hubs to connect to");
         out.println("--port PORT\t\t\tPort used for the server");
-
+        out.println();
         out
                 .println("PROPERTY=VALUE\t\t\tSet a property, as if it was set in a configuration");
         out.println("\t\t\t\tfile or as a System property.");
@@ -156,6 +202,8 @@ public final class Server {
         for (int i = 0; i < args.length; i++) {
             if (args[i].equalsIgnoreCase("--no-hub")) {
                 properties.setProperty(ServerProperties.START_HUB, "false");
+            } else if (args[i].equalsIgnoreCase("--hub-only")) {
+                properties.setProperty(ServerProperties.HUB_ONLY, "true");
             } else if (args[i].equalsIgnoreCase("--hub-addresses")) {
                 i++;
                 properties.setProperty(ServerProperties.HUB_ADDRESSES, args[i]);
@@ -201,16 +249,28 @@ public final class Server {
             // IGNORE
         }
 
-        synchronized (server) {
+        String knownHubs = null;
+        while (true) {
+            DirectSocketAddress[] hubs = server.getHubs();
+
+            if (hubs.length != 0) {
+                String newKnownHubs = hubs[0].toString();
+                for (int i = 1; i < hubs.length; i++) {
+                    newKnownHubs += "," + hubs[i].toString();
+                }
+
+                if (!newKnownHubs.equals(knownHubs)) {
+                    knownHubs = newKnownHubs;
+                    System.out.println("Known hubs now: " + knownHubs);
+                }
+            }
+
             try {
-                server.wait();
+                Thread.sleep(1000);
             } catch (InterruptedException e) {
-                // IGNORE
+                return;
             }
         }
-
-        // run server until completion, then exit
-        // server.run();
     }
 
 }

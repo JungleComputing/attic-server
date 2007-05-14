@@ -13,6 +13,8 @@ public final class ServerProperties {
     
     public static final String START_HUB = PREFIX + "start.hub";
 
+    public static final String HUB_ONLY = PREFIX + "hub.only";
+    
     public static final String PORT = PREFIX + "port";
 
     public static final String IMPL_PATH = PREFIX + "impl.path";
@@ -31,6 +33,8 @@ public final class ServerProperties {
             { HUB_ADDRESSES, null, "Comma seperated list of hubs." },
 
             { START_HUB, "true", "Boolean: if true, also start a hub at the server" },
+
+            { HUB_ONLY, "false", "Boolean: if true, only start a hub, not the rest of the server" },
             
             { PORT, "8888", "Port which the server binds to" },
 
