@@ -9,7 +9,7 @@ public final class PoolInfoProperties {
     
     public static final String IBIS_PREFIX = "ibis.";
     
-    public static final String HOSTNAME = IBIS_PREFIX + "hostname";
+    public static final String HOST = IBIS_PREFIX + "host";
     
     public static final String CLUSTER = IBIS_PREFIX + "cluster";
 
@@ -24,7 +24,7 @@ public final class PoolInfoProperties {
             
             { POOL_SIZE, null, "Int: size of the pool" },
             
-            { HOSTNAME, null, "Hostname to use as identifier. Default is FQDN of this machine"},
+            { HOST, null, "String used as an identifier for this machine. Default is the Fully Qualified Domain name of this machine"},
             
             { CLUSTER, "unknown", "Cluster of the local machine"},
     

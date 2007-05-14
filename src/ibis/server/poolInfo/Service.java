@@ -104,25 +104,30 @@ public final class Service implements ibis.server.Service, Runnable {
                         new BufferedInputStream(socket.getInputStream()));
 
                 String poolName = in.readUTF();
-                String hostName = in.readUTF();
-                String clusterName = in.readUTF();
+                String host = in.readUTF();
+                String address = in.readUTF();
+                String cluster = in.readUTF();
                 int size = in.readInt();
 
                 Pool pool = getPool(poolName, size);
                 
                 // blocks until pool is complete
-                int rank = pool.join(hostName, clusterName, size);
+                int rank = pool.join(host, address, cluster, size);
                 
                 //remove pool from list of pools...
                 removePool(poolName);
 
                 out.writeInt(rank);
                 if (rank >= 0) {
-                    String[] hostnames = pool.getHostnames();
+                    String[] hostnames = pool.getHosts();
                     for (int i = 0; i < hostnames.length; i++) {
                         out.writeUTF(hostnames[i]);
                     }
-                    String[] clusters = pool.getClusterNames();
+                    String[] addresses = pool.getAddresses();
+                    for (int i = 0; i < addresses.length; i++) {
+                        out.writeUTF(addresses[i]);
+                    }
+                    String[] clusters = pool.getClusters();
                     for (int i = 0; i < clusters.length; i++) {
                         out.writeUTF(clusters[i]);
                     }
