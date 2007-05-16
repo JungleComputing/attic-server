@@ -19,7 +19,8 @@ import ibis.util.TypedProperties;
 public class Client {
     private static VirtualSocketFactory defaultFactory = null;
 
-    private static Map<String, VirtualSocketFactory> factories = new HashMap<String, VirtualSocketFactory>();
+    private static Map<String, VirtualSocketFactory> factories = 
+        new HashMap<String, VirtualSocketFactory>();
 
     private static DirectSocketAddress createAddressFromString(
             String serverString, int defaultPort) throws IOException {

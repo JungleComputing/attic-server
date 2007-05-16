@@ -33,7 +33,7 @@ public class PoolInfo {
     
     private static final Logger logger = Logger.getLogger(PoolInfo.class);
 
-    public static final int CONNECTION_TIMEOUT = 5000;
+    public static final int CONNECTION_TIMEOUT = 120000;
 
     private final String poolName;
 
@@ -92,8 +92,9 @@ public class PoolInfo {
         VirtualSocketAddress serviceAddress = Client.getServiceAddress(
                 Service.VIRTUAL_PORT, typedProperties);
 
-        VirtualSocket socket = factory.createClientSocket(serviceAddress,
-                CONNECTION_TIMEOUT, null);
+        VirtualSocket socket = factory.createClientSocket(serviceAddress, 
+                CONNECTION_TIMEOUT, true, null);
+        
         DataOutputStream out = new DataOutputStream(new BufferedOutputStream(
                 socket.getOutputStream()));
         DataInputStream in = new DataInputStream(new BufferedInputStream(socket
