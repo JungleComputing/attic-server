@@ -19,8 +19,7 @@ import ibis.util.TypedProperties;
 public class Client {
     private static VirtualSocketFactory defaultFactory = null;
 
-    private static Map<String, VirtualSocketFactory> factories = 
-        new HashMap<String, VirtualSocketFactory>();
+    private static Map<String, VirtualSocketFactory> factories = new HashMap<String, VirtualSocketFactory>();
 
     private static DirectSocketAddress createAddressFromString(
             String serverString, int defaultPort) throws IOException {
@@ -32,13 +31,13 @@ public class Client {
         try {
             return DirectSocketAddress.getByAddress(serverString);
         } catch (IllegalArgumentException e) {
-            //IGNORE
+            // IGNORE
         }
 
         try {
             return DirectSocketAddress.getByAddress(serverString, defaultPort);
         } catch (Exception e) {
-            //IGNORE
+            // IGNORE
         }
 
         throw new IOException(
@@ -67,25 +66,29 @@ public class Client {
         return new VirtualSocketAddress(serverMachine, port);
     }
 
-    public static synchronized VirtualSocketFactory getFactory(
-            Properties properties) throws InitializationException {
-        String hubs;
-        if (properties == null) {
-            hubs = null;
-        } else {
-            hubs = properties.getProperty(ServerProperties.HUB_ADDRESSES);
+    public static synchronized VirtualSocketFactory getFactory(Properties p)
+            throws InitializationException, IOException {
+        TypedProperties typedProperties = ServerProperties
+                .getHardcodedProperties();
+        typedProperties.addProperties(p);
 
-            String server = properties.getProperty(ServerProperties.ADDRESS);
-            if (server != null) {
-                if (hubs == null) {
-                    hubs = server;
-                } else {
-                    hubs = hubs + "," + server;
-                }
+        String hubs = typedProperties
+                .getProperty(ServerProperties.HUB_ADDRESSES);
+
+        String server = typedProperties.getProperty(ServerProperties.ADDRESS);
+        if (server != null) {
+            DirectSocketAddress serverAddress = createAddressFromString(server,
+                    typedProperties.getIntProperty(ServerProperties.PORT));
+            if (hubs == null) {
+                hubs = serverAddress.toString();
+            } else {
+                hubs = hubs + "," + serverAddress.toString();
             }
         }
 
         if (hubs == null) {
+            // return the default factory
+
             if (defaultFactory == null) {
                 Properties smartProperties = new Properties();
                 smartProperties.put(SmartSocketsProperties.DISCOVERY_ALLOWED,
@@ -99,6 +102,7 @@ public class Client {
         VirtualSocketFactory factory = factories.get(hubs);
 
         if (factory == null) {
+            // return a factory for the specified "hubs" string
             Properties smartProperties = new Properties();
             smartProperties.put(SmartSocketsProperties.DISCOVERY_ALLOWED,
                     "false");

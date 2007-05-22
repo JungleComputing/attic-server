@@ -252,6 +252,10 @@ public final class Server {
         String knownHubs = null;
         while (true) {
             DirectSocketAddress[] hubs = server.getHubs();
+            //FIXME: remove if smartsockets promises to not return null ;)
+            if (hubs == null) {
+                hubs = new DirectSocketAddress[0];
+            }
 
             if (hubs.length != 0) {
                 String newKnownHubs = hubs[0].toString();
