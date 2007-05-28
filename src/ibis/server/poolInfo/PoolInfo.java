@@ -16,6 +16,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.Properties;
 
 import org.apache.log4j.Logger;
@@ -30,7 +31,7 @@ import org.apache.log4j.Logger;
  * config file.
  */
 public class PoolInfo {
-    
+
     private static final Logger logger = Logger.getLogger(PoolInfo.class);
 
     public static final int CONNECTION_TIMEOUT = 120000;
@@ -41,10 +42,8 @@ public class PoolInfo {
 
     private final int rank;
 
-    private final String[] hosts;
-
     private final String[] clusters;
-    
+
     private final IPAddressSet[] addresses;
 
     public PoolInfo(Properties properties, boolean addDefaultConfigProperties)
@@ -73,20 +72,16 @@ public class PoolInfo {
                     + PoolInfoProperties.POOL_NAME + " not set");
         }
 
-        String host = typedProperties
-                .getProperty(PoolInfoProperties.HOST);
-
-        if (host == null) {
-            InetAddress address = InetAddress.getLocalHost();
-            host = address.getCanonicalHostName();
-        }
-
         String cluster = typedProperties
                 .getProperty(PoolInfoProperties.CLUSTER);
         
         IPAddressSet localAddress = IPAddressSet.getLocalHost();
         
-        logger.debug("Creating PoolInfo for " + host + "(" + localAddress + ")@" + cluster);
+        if (localAddress == null || localAddress.getAddresses().length == 0) {
+            throw new UnknownHostException("could not determine local host address");
+        }
+        
+        logger.debug("Creating PoolInfo for " + localAddress + "@" + cluster);
 
         VirtualSocketFactory factory = Client.getFactory(typedProperties);
         VirtualSocketAddress serviceAddress = Client.getServiceAddress(
@@ -101,7 +96,6 @@ public class PoolInfo {
                 .getInputStream()));
 
         out.writeUTF(poolName);
-        out.writeUTF(host);
         out.writeUTF(localAddress.toString());
         out.writeUTF(cluster);
         out.writeInt(size);
@@ -122,10 +116,6 @@ public class PoolInfo {
             throw new Exception("Unknown result: " + rank);
         }
 
-        hosts = new String[size];
-        for (int i = 0; i < size; i++) {
-            hosts[i] = in.readUTF();
-        }
         addresses = new IPAddressSet[size];
         for (int i = 0; i < size; i++) {
             String addressString = in.readUTF(); 
@@ -144,7 +134,7 @@ public class PoolInfo {
             // IGNORE
         }
         
-        logger.debug("PoolInfo created for " + host + "(" + localAddress + ")@" + cluster + ", rank = " + rank);
+        logger.debug("PoolInfo created for " + localAddress + "@" + cluster + ", rank = " + rank);
 
 
     }
@@ -174,35 +164,48 @@ public class PoolInfo {
         return rank;
     }
 
-
     /**
-     * Returns the IP address of the local machine, as a String
+     * Returns an IP address of the local machine.
      * 
-     * @return the IP address of the local machine, as a String
+     * @return an IP address of the local machine.
      */
-    public String getIPAddress() {
-        return addresses[rank].getAddresses()[0].getHostAddress();
+    public InetAddress getInetAddress() {
+        return addresses[rank].getAddresses()[0];
     }
 
     /**
-     * Returns the IP address of the machine with the given rank, as a String.
+     * Returns the IP address of the machine with the given rank.
      * 
-     * @param the rank of the machine
-     * @return the IP address of the machine, as a String.
+     * @param the
+     *            rank of the machine
+     * @return the IP address of the machine.
      */
-    public String getIPAddress(int rank) {
-        return addresses[rank].getAddresses()[0].getHostAddress();
+    public InetAddress getInetAddress(int rank) {
+        return addresses[rank].getAddresses()[0];
     }
+
     
+    /**
+     * Returns all IP addresses of the local machine, as an IPAddressSet
+     * 
+     * @return all IP addresses of the local machine.
+     */
     public IPAddressSet getIPAddressSet() {
         return addresses[rank];
     }
 
+    /**
+     * Returns all IP addresses of the machine with the given rank, as an
+     * IPAddressSet.
+     * 
+     * @param the
+     *            rank of the machine
+     * @return all IP addresses of the machine.
+     */
     public IPAddressSet getIPAddressSet(int rank) {
         return addresses[rank];
     }
 
-    
     /**
      * Returns the cluster for the current host.
      * 
@@ -224,55 +227,19 @@ public class PoolInfo {
     }
 
     /**
-     * Returns an array of cluster names, one for each host involved in the run.
-     * 
-     * @return the cluster names
-     */
-    public String[] geClusters() {
-        return clusters.clone();
-    }
-
-    /**
-     * Returns the name of the current host.
-     * 
-     * @return the name of the current host.
-     */
-    public String getHostname() {
-        return hosts[rank];
-    }
-    
-    /**
-     * Returns the name of the host with the given rank.
-     * 
-     * @param rank
-     *            the rank number.
-     * @return the name of the host with the given rank.
-     */
-    public String getHostname(int rank) {
-        return hosts[rank];
-    }
-
-    /**
-     * Returns an array of hostnames of the hosts.
-     * 
-     * @return an array of hostnames of the hosts.
-     */
-    public String[] getHostnames() {
-        return hosts.clone();
-    }
-
-    /**
      * Returns a string representation of the information in this
      * <code>PoolInfo</code>.
      * 
      * @return a string representation.
      */
     public String toString() {
-        String result = "pool info: size = " + size + "; my rank is " + rank
-                + "; host list:\n";
-        for (int i = 0; i < hosts.length; i++) {
-            result += i + ": address = " + hosts[i] + " cluster = "
-                    + clusters[i] + "\n";
+        String result =
+                "pool info: size = " + size + "; my rank is " + rank
+                        + "; host list:\n";
+        for (int i = 0; i < addresses.length; i++) {
+            result +=
+                    i + ": address = " + addresses[i] + " cluster = "
+                            + clusters[i] + "\n";
         }
         return result;
     }

@@ -10,8 +10,6 @@ public final class Pool {
 
     private final boolean printEvents;
 
-    private ArrayList<String> hosts;
-
     private ArrayList<String> addresses;
     
     private ArrayList<String> clusters;
@@ -21,7 +19,6 @@ public final class Pool {
         this.size = size;
         this.printEvents = printEvents;
 
-        hosts = new ArrayList<String>();
         addresses = new ArrayList<String>();
         clusters = new ArrayList<String>();
 
@@ -31,7 +28,7 @@ public final class Pool {
         }
     }
 
-    public synchronized int join(String host, String address, String cluster, int size) {
+    public synchronized int join(String address, String cluster, int size) {
         if (size <= 0) {
             return Service.RESULT_INVALID_SIZE;
         }
@@ -42,26 +39,25 @@ public final class Pool {
         }
 
         // pool is full
-        if (hosts.size() >= size) {
+        if (addresses.size() >= size) {
             return Service.RESULT_POOL_CLOSED;
         }
 
-        int rank = hosts.size();
-        hosts.add(host);
+        int rank = addresses.size();
         addresses.add(address);
         clusters.add(cluster);
 
-        if (hosts.size() >= size) {
+        if (addresses.size() >= size) {
             notifyAll();
         }
         
         if (printEvents) {
-            System.out.println("PoolInfo: \"" + host + "@" + cluster
-                    + "\" joins pool \"" + name + "\", of size " + size + this.size + ", rank = " + rank);
+            System.out.println("PoolInfo: \"" + address + "@" + cluster
+                    + "\" joins pool \"" + name + "\", of size " + size + ", rank = " + rank);
         }
 
         // wait for everyone else to join too
-        while (hosts.size() < size) {
+        while (addresses.size() < size) {
             try {
                 wait();
             } catch (InterruptedException e) {
@@ -70,10 +66,6 @@ public final class Pool {
         }
 
         return rank;
-    }
-
-    public synchronized String[] getHosts() {
-        return hosts.toArray(new String[0]);
     }
 
     public synchronized String[] getAddresses() {

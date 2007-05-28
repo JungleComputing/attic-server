@@ -26,7 +26,7 @@ public final class Service implements ibis.server.Service, Runnable {
     public static final int RESULT_INVALID_SIZE = -1;
 
     public static final int RESULT_POOL_CLOSED = -2;
-    
+
     public static final int RESULT_UNEQUAL_SIZE = -3;
 
     private static final Logger logger = Logger.getLogger(Service.class);
@@ -34,7 +34,7 @@ public final class Service implements ibis.server.Service, Runnable {
     private final VirtualServerSocket serverSocket;
 
     private final Map<String, Pool> pools;
-    
+
     private final boolean printEvents;
 
     public Service(TypedProperties properties, VirtualSocketFactory factory)
@@ -44,15 +44,18 @@ public final class Service implements ibis.server.Service, Runnable {
         serverSocket = factory.createServerSocket(VIRTUAL_PORT, 0, null);
 
         ThreadPool.createNew(this, "PoolInfoService");
-        
-        printEvents = properties.getBooleanProperty(ServerProperties.PRINT_EVENTS);
-        
-        Level level = Level.toLevel(properties
-                .getProperty(ServerProperties.LOG_LEVEL, "INFO"));
+
+        printEvents =
+                properties.getBooleanProperty(ServerProperties.PRINT_EVENTS);
+
+        Level level =
+                Level.toLevel(properties.getProperty(
+                        ServerProperties.LOG_LEVEL, "INFO"));
         Log.initLog4J(logger, level);
 
-        logger.debug("Started PoolInfo service on virtual port "
-                + VIRTUAL_PORT);
+        logger
+                .debug("Started PoolInfo service on virtual port "
+                        + VIRTUAL_PORT);
     }
 
     public void end(boolean waitUntilIdle) {
@@ -70,14 +73,14 @@ public final class Service implements ibis.server.Service, Runnable {
 
         return pool;
     }
-    
+
     /**
      * Called more than once, but doesn't matter
      */
     private synchronized void removePool(String poolName) {
         pools.remove(poolName);
     }
-    
+
     public String toString() {
         return "PoolInfo service on virtual port " + VIRTUAL_PORT;
     }
@@ -98,31 +101,28 @@ public final class Service implements ibis.server.Service, Runnable {
 
             try {
 
-                DataOutputStream out = new DataOutputStream(
-                        new BufferedOutputStream(socket.getOutputStream()));
-                DataInputStream in = new DataInputStream(
-                        new BufferedInputStream(socket.getInputStream()));
+                DataOutputStream out =
+                        new DataOutputStream(new BufferedOutputStream(socket
+                                .getOutputStream()));
+                DataInputStream in =
+                        new DataInputStream(new BufferedInputStream(socket
+                                .getInputStream()));
 
                 String poolName = in.readUTF();
-                String host = in.readUTF();
                 String address = in.readUTF();
                 String cluster = in.readUTF();
                 int size = in.readInt();
 
                 Pool pool = getPool(poolName, size);
-                
+
                 // blocks until pool is complete
-                int rank = pool.join(host, address, cluster, size);
-                
-                //remove pool from list of pools...
+                int rank = pool.join(address, cluster, size);
+
+                // remove pool from list of pools...
                 removePool(poolName);
 
                 out.writeInt(rank);
                 if (rank >= 0) {
-                    String[] hostnames = pool.getHosts();
-                    for (int i = 0; i < hostnames.length; i++) {
-                        out.writeUTF(hostnames[i]);
-                    }
                     String[] addresses = pool.getAddresses();
                     for (int i = 0; i < addresses.length; i++) {
                         out.writeUTF(addresses[i]);
