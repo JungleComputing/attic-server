@@ -174,6 +174,7 @@ public final class Server {
         out.println("\t\t\t\tfile or as a System property.");
         out.println("Output Options:");
         out.println("--events\t\t\tPrint events");
+        out.println("--errors\t\t\tPrint details of errors (such as stacktraces)");
         out.println("--stats\t\t\t\tPrint statistics once in a while");
         out.println("--warn\t\t\t\tOnly print warnings and errors, "
                 + "no status messages or events or statistics");
@@ -212,6 +213,8 @@ public final class Server {
                 properties.put(ServerProperties.PORT, args[i]);
             } else if (args[i].equalsIgnoreCase("--events")) {
                 properties.setProperty(ServerProperties.PRINT_EVENTS, "true");
+            } else if (args[i].equalsIgnoreCase("--errors")) {
+                properties.setProperty(ServerProperties.PRINT_ERRORS, "true");
             } else if (args[i].equalsIgnoreCase("--stats")) {
                 properties.setProperty(ServerProperties.PRINT_STATS, "true");
             } else if (args[i].equalsIgnoreCase("--warn")) {
