@@ -50,15 +50,6 @@
 			includes="ibis/server/*.class">
 		</jar>
 
-		<jar 
-			destfile="lib/ibis-poolinfo.jar" 
-			basedir="tmp" 
-			includes="ibis/server/poolInfo/*">
-			<manifest>
-				<attribute name="Ibis-Service" value="ibis.server.poolInfo.Service" />
-			</manifest>
-		</jar>
-
 		<!-- add external stuff to lib -->
 		<copy todir="lib">
 			<fileset dir="external" />

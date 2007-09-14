@@ -1,7 +1,5 @@
 package ibis.server;
 
-import ibis.ipl.IbisProperties;
-
 import ibis.util.ClassLister;
 import ibis.util.TypedProperties;
 
@@ -31,17 +29,13 @@ public final class Server {
 
     private final boolean hubOnly;
 
-    public Server(Properties properties, boolean addDefaultConfigProperties)
+    public Server(Properties properties)
             throws Exception {
         services = new ArrayList<Service>();
 
         // load properties from config files and such
         TypedProperties typedProperties = ServerProperties
                 .getHardcodedProperties();
-
-        if (addDefaultConfigProperties) {
-            typedProperties.addProperties(IbisProperties.getDefaultProperties());
-        }
 
         typedProperties.addProperties(properties);
 
@@ -227,7 +221,7 @@ public final class Server {
 
         Server server = null;
         try {
-            server = new Server(properties, true);
+            server = new Server(properties);
             System.out.println(server.toString());
         } catch (Throwable t) {
             System.err.println("Could not start Server: " + t);
