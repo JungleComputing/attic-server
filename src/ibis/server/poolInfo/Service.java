@@ -4,7 +4,6 @@ import ibis.server.ServerProperties;
 import ibis.smartsockets.virtual.VirtualServerSocket;
 import ibis.smartsockets.virtual.VirtualSocket;
 import ibis.smartsockets.virtual.VirtualSocketFactory;
-import ibis.util.Log;
 import ibis.util.ThreadPool;
 import ibis.util.TypedProperties;
 
@@ -16,7 +15,6 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
 public final class Service implements ibis.server.Service, Runnable {
@@ -47,11 +45,6 @@ public final class Service implements ibis.server.Service, Runnable {
 
         printEvents =
                 properties.getBooleanProperty(ServerProperties.PRINT_EVENTS);
-
-        Level level =
-                Level.toLevel(properties.getProperty(
-                        ServerProperties.LOG_LEVEL, "INFO"));
-        Log.initLog4J(logger, level);
 
         logger
                 .debug("Started PoolInfo service on virtual port "

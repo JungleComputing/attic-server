@@ -3,7 +3,6 @@ package ibis.server;
 import ibis.ipl.IbisProperties;
 
 import ibis.util.ClassLister;
-import ibis.util.Log;
 import ibis.util.TypedProperties;
 
 import java.io.PrintStream;
@@ -11,7 +10,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 
-import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
 import ibis.smartsockets.SmartSocketsProperties;
@@ -20,6 +18,8 @@ import ibis.smartsockets.hub.Hub;
 import ibis.smartsockets.virtual.VirtualSocketFactory;
 
 public final class Server {
+    
+    private static final Logger logger = Logger.getLogger(Server.class);
 
     private final VirtualSocketFactory virtualSocketFactory;
 
@@ -44,12 +44,6 @@ public final class Server {
         }
 
         typedProperties.addProperties(properties);
-
-        // Init ibis.server logger
-        Logger logger = Logger.getLogger("ibis.server");
-        Level level = Level.toLevel(typedProperties
-                .getProperty(ServerProperties.LOG_LEVEL));
-        Log.initLog4J(logger, level);
 
         if (logger.isDebugEnabled()) {
             TypedProperties serverProperties = typedProperties
@@ -178,9 +172,6 @@ public final class Server {
         out.println("--events\t\t\tPrint events");
         out.println("--errors\t\t\tPrint details of errors (such as stacktraces)");
         out.println("--stats\t\t\t\tPrint statistics once in a while");
-        out.println("--warn\t\t\t\tOnly print warnings and errors, "
-                + "no status messages or events or statistics");
-        out.println("--debug\t\t\t\tPrint debug output.");
         out.println("--help | -h | /?\t\tThis message.");
     }
 
@@ -219,10 +210,6 @@ public final class Server {
                 properties.setProperty(ServerProperties.PRINT_ERRORS, "true");
             } else if (args[i].equalsIgnoreCase("--stats")) {
                 properties.setProperty(ServerProperties.PRINT_STATS, "true");
-            } else if (args[i].equalsIgnoreCase("--warn")) {
-                properties.setProperty(ServerProperties.LOG_LEVEL, "WARN");
-            } else if (args[i].equalsIgnoreCase("--debug")) {
-                properties.setProperty(ServerProperties.LOG_LEVEL, "DEBUG");
             } else if (args[i].equalsIgnoreCase("--help")
                     || args[i].equalsIgnoreCase("-h")
                     || args[i].equalsIgnoreCase("/?")) {

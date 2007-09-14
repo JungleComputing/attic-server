@@ -25,8 +25,6 @@ public final class ServerProperties {
 
     public static final String PRINT_ERRORS = PREFIX + "print.errors";
     
-    public static final String LOG_LEVEL = PREFIX + "log.level";
-
     // client side properties
 
     public static final String ADDRESS = PREFIX + "address";
@@ -48,8 +46,6 @@ public final class ServerProperties {
                     "Boolean: if true, details of errors (like stacktraces) are printed" },
             { PRINT_STATS, "false",
                     "Boolean: if true, statistics are printed to standard out regularly." },
-            { LOG_LEVEL, "INFO",
-                    "determines level of verbosity (TRACE,DEBUG,INFO,WARN,ERROR or FATAL) of the server log" },
             { ADDRESS, null,
                     "Address of the server" },
 

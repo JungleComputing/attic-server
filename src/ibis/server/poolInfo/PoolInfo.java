@@ -8,7 +8,6 @@ import ibis.smartsockets.direct.IPAddressSet;
 import ibis.smartsockets.virtual.VirtualSocket;
 import ibis.smartsockets.virtual.VirtualSocketAddress;
 import ibis.smartsockets.virtual.VirtualSocketFactory;
-import ibis.util.Log;
 import ibis.util.TypedProperties;
 
 import java.io.BufferedInputStream;
@@ -49,8 +48,6 @@ public class PoolInfo {
 
     public PoolInfo(Properties properties, boolean addDefaultConfigProperties)
             throws Exception {
-        Log.initLog4J(logger);
-
         TypedProperties typedProperties = PoolInfoProperties
                 .getHardcodedProperties();
 
