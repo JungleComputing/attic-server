@@ -2,6 +2,7 @@
 
 package ibis.server.poolInfo;
 
+import ibis.ipl.IbisProperties;
 import ibis.server.Client;
 import ibis.smartsockets.direct.IPAddressSet;
 import ibis.smartsockets.virtual.VirtualSocket;
@@ -54,7 +55,7 @@ public class PoolInfo {
                 .getHardcodedProperties();
 
         if (addDefaultConfigProperties) {
-            typedProperties.loadDefaultConfigProperties();
+            typedProperties.addProperties(IbisProperties.getDefaultProperties());
         }
 
         typedProperties.addProperties(properties);
