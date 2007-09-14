@@ -1,5 +1,7 @@
 package ibis.server;
 
+import ibis.ipl.IbisProperties;
+
 import ibis.util.ClassLister;
 import ibis.util.Log;
 import ibis.util.TypedProperties;
@@ -38,7 +40,7 @@ public final class Server {
                 .getHardcodedProperties();
 
         if (addDefaultConfigProperties) {
-            typedProperties.loadDefaultConfigProperties();
+            typedProperties.addProperties(IbisProperties.getDefaultProperties());
         }
 
         typedProperties.addProperties(properties);
