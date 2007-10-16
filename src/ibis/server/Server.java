@@ -4,6 +4,7 @@ import ibis.util.ClassLister;
 import ibis.util.TypedProperties;
 
 import java.io.PrintStream;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
@@ -16,7 +17,7 @@ import ibis.smartsockets.hub.Hub;
 import ibis.smartsockets.virtual.VirtualSocketFactory;
 
 public final class Server {
-    
+
     private static final Logger logger = Logger.getLogger(Server.class);
 
     private final VirtualSocketFactory virtualSocketFactory;
@@ -29,27 +30,27 @@ public final class Server {
 
     private final boolean hubOnly;
 
-    public Server(Properties properties)
-            throws Exception {
+    public Server(Properties properties) throws Exception {
         services = new ArrayList<Service>();
 
         // load properties from config files and such
-        TypedProperties typedProperties = ServerProperties
-                .getHardcodedProperties();
+        TypedProperties typedProperties =
+                ServerProperties.getHardcodedProperties();
 
         typedProperties.addProperties(properties);
 
         if (logger.isDebugEnabled()) {
-            TypedProperties serverProperties = typedProperties
-                    .filter("ibis.server");
+            TypedProperties serverProperties =
+                    typedProperties.filter("ibis.server");
             logger.debug("Settings for server:\n" + serverProperties);
         }
 
         // create the virtual socket factory
-        ibis.smartsockets.util.TypedProperties smartProperties = new ibis.smartsockets.util.TypedProperties();
+        ibis.smartsockets.util.TypedProperties smartProperties =
+                new ibis.smartsockets.util.TypedProperties();
 
-        String hubs = typedProperties
-                .getProperty(ServerProperties.HUB_ADDRESSES);
+        String hubs =
+                typedProperties.getProperty(ServerProperties.HUB_ADDRESSES);
         if (hubs != null) {
             smartProperties.put(SmartSocketsProperties.HUB_ADDRESSES, hubs);
         }
@@ -77,29 +78,38 @@ public final class Server {
                         .put(SmartSocketsProperties.HUB_DELEGATE, "true");
             }
 
-            virtualSocketFactory = VirtualSocketFactory.createSocketFactory(
-                    smartProperties, true);
+            virtualSocketFactory =
+                    VirtualSocketFactory.createSocketFactory(smartProperties,
+                            true);
             address = virtualSocketFactory.getLocalHost();
 
             // Obtain a list of Services
-            String implPath = typedProperties
-                    .getProperty(ServerProperties.IMPL_PATH);
+            String implPath =
+                    typedProperties.getProperty(ServerProperties.IMPL_PATH);
             ClassLister clstr = ClassLister.getClassLister(implPath);
-            List<Class> compnts = clstr.getClassList("Ibis-Service",
-                    Service.class);
-            Class[] serviceClassList = compnts
-                    .toArray(new Class[compnts.size()]);
+            List<Class> compnts =
+                    clstr.getClassList("Ibis-Service", Service.class);
+            Class[] serviceClassList =
+                    compnts.toArray(new Class[compnts.size()]);
 
             for (int i = 0; i < serviceClassList.length; i++) {
                 try {
-                    Service service = (Service) serviceClassList[i]
-                            .getConstructor(
+                    Service service =
+                            (Service) serviceClassList[i].getConstructor(
                                     new Class[] { TypedProperties.class,
-                                            VirtualSocketFactory.class })
-                            .newInstance(
-                                    new Object[] { typedProperties,
-                                            virtualSocketFactory });
+                                        VirtualSocketFactory.class })
+                                    .newInstance(
+                                            new Object[] { typedProperties,
+                                                virtualSocketFactory });
                     services.add(service);
+                } catch (InvocationTargetException e) {
+                    if (e.getCause() == null) {
+                        logger.warn("Could not create service "
+                                + serviceClassList[i] + ":", e);
+                    } else {
+                        logger.warn("Could not create service "
+                                + serviceClassList[i] + ":", e.getCause());
+                    }
                 } catch (Throwable e) {
                     logger.warn("Could not create service "
                             + serviceClassList[i] + ":", e);
@@ -128,8 +138,9 @@ public final class Server {
             return "Hub running on " + getLocalAddress();
         }
 
-        String message = "Ibis server running on " + getLocalAddress()
-                + "\nList of Services:";
+        String message =
+                "Ibis server running on " + getLocalAddress()
+                        + "\nList of Services:";
 
         for (Service service : services) {
             message += "\n    " + service.toString();
@@ -164,7 +175,8 @@ public final class Server {
         out.println("\t\t\t\tfile or as a System property.");
         out.println("Output Options:");
         out.println("--events\t\t\tPrint events");
-        out.println("--errors\t\t\tPrint details of errors (such as stacktraces)");
+        out
+                .println("--errors\t\t\tPrint details of errors (such as stacktraces)");
         out.println("--stats\t\t\t\tPrint statistics once in a while");
         out.println("--help | -h | /?\t\tThis message.");
     }
@@ -238,7 +250,7 @@ public final class Server {
         String knownHubs = null;
         while (true) {
             DirectSocketAddress[] hubs = server.getHubs();
-            //FIXME: remove if smartsockets promises to not return null ;)
+            // FIXME: remove if smartsockets promises to not return null ;)
             if (hubs == null) {
                 hubs = new DirectSocketAddress[0];
             }

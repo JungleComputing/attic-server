@@ -7,7 +7,7 @@
     <!-- import environment properties -->
     <property environment="env" />
 
-    <property name="version" value="-2.0rc1" />
+    <property name="version" value="-2.0rc2-pre" />
 
     <property name="jar-file" value="ibis-server${version}.jar" />
 
