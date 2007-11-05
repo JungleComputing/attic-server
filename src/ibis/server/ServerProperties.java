@@ -17,7 +17,7 @@ public final class ServerProperties {
     
     public static final String PORT = PREFIX + "port";
 
-    public static final String IMPL_PATH = PREFIX + "impl.path";
+    public static final String IMPLEMENTATION_PATH = PREFIX + "implementation.path";
 
     public static final String PRINT_EVENTS = PREFIX + "print.events";
 
@@ -38,7 +38,7 @@ public final class ServerProperties {
             
             { PORT, "8888", "Port which the server binds to" },
 
-            { IMPL_PATH, null, "Path used to find service implementations" },
+            { IMPLEMENTATION_PATH, null, "Path used to find service implementations" },
 
             { PRINT_EVENTS, "false",
                     "Boolean: if true, events of services are printed to standard out." },

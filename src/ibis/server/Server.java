@@ -85,7 +85,7 @@ public final class Server {
 
             // Obtain a list of Services
             String implPath =
-                    typedProperties.getProperty(ServerProperties.IMPL_PATH);
+                    typedProperties.getProperty(ServerProperties.IMPLEMENTATION_PATH);
             ClassLister clstr = ClassLister.getClassLister(implPath);
             List<Class> compnts =
                     clstr.getClassList("Ibis-Service", Service.class);
