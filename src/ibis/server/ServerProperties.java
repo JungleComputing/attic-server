@@ -5,6 +5,9 @@ import ibis.util.TypedProperties;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+/**
+ * Properties valid for the Ibis server
+ */
 public final class ServerProperties {
 
     public static final String PREFIX = "ibis.server.";

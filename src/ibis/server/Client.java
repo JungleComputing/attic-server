@@ -21,6 +21,10 @@ public class Client {
 
     private static Map<String, VirtualSocketFactory> factories = new HashMap<String, VirtualSocketFactory>();
 
+    private Client() {
+        // DO NOT USE
+    }
+
     private static DirectSocketAddress createAddressFromString(
             String serverString, int defaultPort) throws IOException {
         if (serverString == null) {
@@ -45,6 +49,15 @@ public class Client {
                         + serverString);
     }
 
+    /**
+     * Get the address of a service running on a given port
+     * 
+     * @param port
+     *            the port the service is running on
+     * @param properties
+     *            object containing any server properties needed (such as the
+     *            servers address)
+     */
     public static VirtualSocketAddress getServiceAddress(int port,
             Properties properties) throws IOException {
         TypedProperties typedProperties = ServerProperties

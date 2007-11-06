@@ -1,68 +1,82 @@
 <project name="ibis-server" default="build" basedir=".">
-
     <description>
-	Build file for Ibis-Server
+	Build file for ibis-server
     </description>
 
-    <!-- import environment properties -->
-    <property environment="env" />
+    <!-- Global properties -->
+    <property name="src" location="src" />
+    <property name="tmp" location="tmp" />
+    <property name="lib" location="lib" />
+    <property name="javadoc" location="javadoc" />
+    <property name="external" location="external" />
+    <property name="sources" value="sources" />
 
-    <property name="version" value="-2.0rc2-pre" />
+    <property name="version" value="-2.0rc2" />
 
-    <property name="jar-file" value="ibis-server${version}.jar" />
+    <property name="jar" location="${lib}/${ant.project.name}${version}.jar" />
+    <property name="sources-filename" value="${ant.project.name}${version}" />
 
-    <!-- create the class path. Consists of all external jars -->
-    <path id="class_path">
-	<fileset dir="external">
-	    <include name="*.jar" />
-	</fileset>
+    <path id="external_jars">
+        <fileset dir="${external}">
+            <include name="*.jar" />
+        </fileset>
     </path>
 
-    <target name="build" depends="clean, compile">
-    </target>
+    <target name="build">
+        <!-- Create the time stamp -->
+        <tstamp />
 
-    <target name="init">
-	<tstamp />
+        <!-- Create the build directory structure used by compile -->
+        <delete dir="${lib}" />
+        <delete dir="${tmp}" />
+        <delete dir="${javadoc}" />
+        <delete dir="${sources}" />
 
-	<mkdir dir="tmp" />
-	<mkdir dir="lib" />
-    </target>
+        <mkdir dir="${tmp}" />
+        <mkdir dir="${lib}" />
+        <mkdir dir="${javadoc}" />
+        <mkdir dir="${sources}" />
+
+        <!-- Compile the java code from ${src} into ${tmp} -->
+        <javac srcdir="${src}" destdir="${tmp}" debug="on">
+            <classpath refid="external_jars" />
+            <compilerarg value="-Xlint:unchecked" />
+        </javac>
+
+        <!-- Create the distribution directory -->
+        <mkdir dir="${lib}" />
 
 
-    <target name="javadoc" depends="init" description="generate all javadocs">
+        <!-- create the javadoc -->
+        <javadoc destdir="javadoc" access="public" sourcepath="${src}">
+            <classpath refid="external_jars" />
+            <link href="http://logging.apache.org/log4j/docs/api/" />
+            <link href="http://java.sun.com/j2se/1.5.0/docs/api/" />
+        </javadoc>
 
-	<javadoc destdir="javadoc" access="public" classpathref="class_path" packagenames="ibis.*" sourcepath="src" overview="src/overview.html">
-	    <link href="http://java.sun.com/j2se/1.5.0/docs/api/" />
-	</javadoc>
-    </target>
+        <!-- Put everything in ${tmp} into the jar file -->
+        <jar jarfile="${jar}" basedir="${tmp}" />
 
-    <target name="compile" depends="init" description="build jar file">
+        <!-- create a zip file with the sources -->
+        <zip destfile="${sources}/${sources-filename}.zip">
+            <zipfileset dir="src"
+                        includes="**/*.java"
+                        prefix="${sources-filename}" />
+            <zipfileset dir="."
+                        includes="LICENSE.txt"
+                        prefix="${sources-filename}" />
+        </zip>
 
-	<!-- Compile the java code from src into tmp -->
-	<javac srcdir="src" destdir="tmp" debug="on" classpathref="class_path" />
-
-	<copy todir="tmp">
-	    <fileset dir="." includes="resources/*" />
-	</copy>
-
-	<jar 
-	    destfile="lib/${jar-file}" 
-	    basedir="tmp" 
-	    includes="ibis/server/*.class">
-	</jar>
-
-	<!-- add external stuff to lib -->
-	<copy todir="lib">
-	    <fileset dir="external" />
-	</copy>
-
-	<delete dir="tmp" />
+        <!-- And delete the build dir -->
+        <delete dir="${tmp}" />
     </target>
 
     <target name="clean" description="clean up">
-	<delete dir="tmp" />
-	<delete dir="lib" />
-	<delete dir="javadoc" />
+        <delete dir="${lib}" />
+        <delete dir="${tmp}" />
+        <delete dir="${javadoc}" />
+        <delete dir="${sources}" />
     </target>
+
 
 </project>

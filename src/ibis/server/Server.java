@@ -16,6 +16,9 @@ import ibis.smartsockets.direct.DirectSocketAddress;
 import ibis.smartsockets.hub.Hub;
 import ibis.smartsockets.virtual.VirtualSocketFactory;
 
+/**
+ * Main Ibis Server class.
+ */ 
 public final class Server {
 
     private static final Logger logger = Logger.getLogger(Server.class);
@@ -30,6 +33,9 @@ public final class Server {
 
     private final boolean hubOnly;
 
+    /**
+     * Create a server with the given server properties
+     */
     public Server(Properties properties) throws Exception {
         services = new ArrayList<Service>();
 
