@@ -223,6 +223,7 @@ public final class Server {
             } else if (args[i].equalsIgnoreCase("--stats")) {
                 properties.setProperty(ServerProperties.PRINT_STATS, "true");
             } else if (args[i].equalsIgnoreCase("--help")
+                    || args[i].equalsIgnoreCase("-help")
                     || args[i].equalsIgnoreCase("-h")
                     || args[i].equalsIgnoreCase("/?")) {
                 printUsage(System.out);
