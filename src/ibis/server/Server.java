@@ -75,7 +75,7 @@ public final class Server {
         } else {
             hub = null;
 
-            smartProperties.put(SmartSocketsProperties.DIRECT_PORT,
+            smartProperties.put(SmartSocketsProperties.PORT_RANGE,
                     typedProperties.getProperty(ServerProperties.PORT));
 
             if (typedProperties.getBooleanProperty(ServerProperties.START_HUB)) {
