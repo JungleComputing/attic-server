@@ -177,8 +177,8 @@ public final class Server {
         out.println("--port PORT\t\t\tPort used for the server");
         out.println();
         out
-                .println("PROPERTY=VALUE\t\t\tSet a property, as if it was set in a configuration");
-        out.println("\t\t\t\tfile or as a System property.");
+                .println("PROPERTY=VALUE\t\t\tSet a property, as if it was set in a");
+        out.println("\t\t\t\t configuration file or as a System property.");
         out.println("Output Options:");
         out.println("--events\t\t\tPrint events");
         out
