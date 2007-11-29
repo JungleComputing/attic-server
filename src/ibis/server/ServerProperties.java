@@ -17,6 +17,8 @@ public final class ServerProperties {
     public static final String START_HUB = PREFIX + "start.hub";
 
     public static final String HUB_ONLY = PREFIX + "hub.only";
+
+    public static final String HUB_ADDRESS_FILE = PREFIX + "hub.address.file";
     
     public static final String PORT = PREFIX + "port";
 
@@ -38,6 +40,8 @@ public final class ServerProperties {
             { START_HUB, "true", "Boolean: if true, also start a hub at the server" },
 
             { HUB_ONLY, "false", "Boolean: if true, only start a hub, not the rest of the server" },
+
+            { HUB_ADDRESS_FILE, null, "String: file where the address of the hub is printed to (and deleted on exit)" },
             
             { PORT, "8888", "Port which the server binds to" },
 

@@ -18,7 +18,7 @@ import ibis.smartsockets.virtual.VirtualSocketFactory;
 
 /**
  * Main Ibis Server class.
- */ 
+ */
 public final class Server {
 
     private static final Logger logger = Logger.getLogger(Server.class);
@@ -40,25 +40,29 @@ public final class Server {
         services = new ArrayList<Service>();
 
         // load properties from config files and such
-        TypedProperties typedProperties =
-                ServerProperties.getHardcodedProperties();
+        TypedProperties typedProperties = ServerProperties
+                .getHardcodedProperties();
 
         typedProperties.addProperties(properties);
 
         if (logger.isDebugEnabled()) {
-            TypedProperties serverProperties =
-                    typedProperties.filter("ibis.server");
+            TypedProperties serverProperties = typedProperties
+                    .filter("ibis.server");
             logger.debug("Settings for server:\n" + serverProperties);
         }
 
         // create the virtual socket factory
-        ibis.smartsockets.util.TypedProperties smartProperties =
-                new ibis.smartsockets.util.TypedProperties();
+        ibis.smartsockets.util.TypedProperties smartProperties = new ibis.smartsockets.util.TypedProperties();
 
-        String hubs =
-                typedProperties.getProperty(ServerProperties.HUB_ADDRESSES);
+        String hubs = typedProperties
+                .getProperty(ServerProperties.HUB_ADDRESSES);
         if (hubs != null) {
             smartProperties.put(SmartSocketsProperties.HUB_ADDRESSES, hubs);
+        }
+        
+        String hubAddressFile = typedProperties.getProperty(ServerProperties.HUB_ADDRESS_FILE);
+        if (hubAddressFile != null) {
+            smartProperties.put(SmartSocketsProperties.HUB_ADDRESS_FILE, hubAddressFile);
         }
 
         hubOnly = typedProperties.getBooleanProperty(ServerProperties.HUB_ONLY);
@@ -84,29 +88,28 @@ public final class Server {
                         .put(SmartSocketsProperties.HUB_DELEGATE, "true");
             }
 
-            virtualSocketFactory =
-                    VirtualSocketFactory.createSocketFactory(smartProperties,
-                            true);
+            virtualSocketFactory = VirtualSocketFactory.createSocketFactory(
+                    smartProperties, true);
             address = virtualSocketFactory.getLocalHost();
 
             // Obtain a list of Services
-            String implPath =
-                    typedProperties.getProperty(ServerProperties.IMPLEMENTATION_PATH);
+            String implPath = typedProperties
+                    .getProperty(ServerProperties.IMPLEMENTATION_PATH);
             ClassLister clstr = ClassLister.getClassLister(implPath);
-            List<Class> compnts =
-                    clstr.getClassList("Ibis-Service", Service.class);
-            Class[] serviceClassList =
-                    compnts.toArray(new Class[compnts.size()]);
+            List<Class> compnts = clstr.getClassList("Ibis-Service",
+                    Service.class);
+            Class[] serviceClassList = compnts
+                    .toArray(new Class[compnts.size()]);
 
             for (int i = 0; i < serviceClassList.length; i++) {
                 try {
-                    Service service =
-                            (Service) serviceClassList[i].getConstructor(
+                    Service service = (Service) serviceClassList[i]
+                            .getConstructor(
                                     new Class[] { TypedProperties.class,
-                                        VirtualSocketFactory.class })
-                                    .newInstance(
-                                            new Object[] { typedProperties,
-                                                virtualSocketFactory });
+                                            VirtualSocketFactory.class })
+                            .newInstance(
+                                    new Object[] { typedProperties,
+                                            virtualSocketFactory });
                     services.add(service);
                 } catch (InvocationTargetException e) {
                     if (e.getCause() == null) {
@@ -139,14 +142,29 @@ public final class Server {
         }
     }
 
+    public void addHubs(DirectSocketAddress... hubAddresses) {
+        if (hubOnly) {
+            hub.addHubs(hubAddresses);
+        } else {
+            virtualSocketFactory.addHubs(hubAddresses);
+        }
+    }
+
+    public void addHubs(String... hubAddresses) {
+        if (hubOnly) {
+            hub.addHubs(hubAddresses);
+        } else {
+            virtualSocketFactory.addHubs(hubAddresses);
+        }
+    }
+
     public String toString() {
         if (hubOnly) {
             return "Hub running on " + getLocalAddress();
         }
 
-        String message =
-                "Ibis server running on " + getLocalAddress()
-                        + "\nList of Services:";
+        String message = "Ibis server running on " + getLocalAddress()
+                + "\nList of Services:";
 
         for (Service service : services) {
             message += "\n    " + service.toString();
@@ -163,6 +181,11 @@ public final class Server {
         for (Service service : services) {
             service.end(waitUntilIdle);
         }
+        if (hubOnly) {
+            hub.end();
+        } else {
+            virtualSocketFactory.end();
+        }
     }
 
     private static void printUsage(PrintStream out) {
@@ -170,20 +193,22 @@ public final class Server {
         out.println();
         out.println("USAGE: ibis-server [OPTIONS]");
         out.println();
-        out.println("--no-hub\t\t\tDo not start a hub");
+        out.println("--no-hub\t\t\tDo not start a hub.");
         out
-                .println("--hub-only\t\t\tOnly start a hub, not the rest of the server");
-        out.println("--hub-addresses HUB[,HUB]\tAdditional hubs to connect to");
-        out.println("--port PORT\t\t\tPort used for the server");
+                .println("--hub-only\t\t\tOnly start a hub, not the rest of the server.");
+        out.println("--hub-addresses HUB[,HUB]\tAdditional hubs to connect to.");
+        out.println("--hub-address-file [FILE_NAME]\tWrite the addresses of the hub to the given");
+        out.println("\t\t\t\tfile. The file is deleted on exit.");
+        out.println("--port PORT\t\t\tPort used for the server.");
         out.println();
         out
                 .println("PROPERTY=VALUE\t\t\tSet a property, as if it was set in a");
-        out.println("\t\t\t\t configuration file or as a System property.");
+        out.println("\t\t\t\tconfiguration file or as a System property.");
         out.println("Output Options:");
-        out.println("--events\t\t\tPrint events");
+        out.println("--events\t\t\tPrint events.");
         out
-                .println("--errors\t\t\tPrint details of errors (such as stacktraces)");
-        out.println("--stats\t\t\t\tPrint statistics once in a while");
+                .println("--errors\t\t\tPrint details of errors (such as stacktraces).");
+        out.println("--stats\t\t\t\tPrint statistics once in a while.");
         out.println("--help | -h | /?\t\tThis message.");
     }
 
@@ -213,6 +238,9 @@ public final class Server {
             } else if (args[i].equalsIgnoreCase("--hub-addresses")) {
                 i++;
                 properties.setProperty(ServerProperties.HUB_ADDRESSES, args[i]);
+            } else if (args[i].equalsIgnoreCase("--hub-address-file")) {
+                i++;
+                properties.setProperty(ServerProperties.HUB_ADDRESS_FILE, args[i]);
             } else if (args[i].equalsIgnoreCase("--port")) {
                 i++;
                 properties.put(ServerProperties.PORT, args[i]);
