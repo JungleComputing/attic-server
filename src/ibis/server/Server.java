@@ -279,7 +279,7 @@ public final class Server {
         try {
             Runtime.getRuntime().addShutdownHook(new Shutdown(server));
         } catch (Exception e) {
-            // IGNORE
+            System.err.println("warning: could not registry shutdown hook");
         }
 
         String knownHubs = null;
