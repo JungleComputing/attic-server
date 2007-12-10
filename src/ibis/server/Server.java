@@ -14,6 +14,7 @@ import org.apache.log4j.Logger;
 import ibis.smartsockets.SmartSocketsProperties;
 import ibis.smartsockets.direct.DirectSocketAddress;
 import ibis.smartsockets.hub.Hub;
+import ibis.smartsockets.hub.servicelink.ServiceLink;
 import ibis.smartsockets.virtual.VirtualSocketFactory;
 
 /**
@@ -92,6 +93,17 @@ public final class Server {
                     smartProperties, true);
             address = virtualSocketFactory.getLocalHost();
 
+            try {
+                ServiceLink sl = virtualSocketFactory.getServiceLink();
+                if (sl != null) {
+                    sl.registerProperty("smartsockets.viz", "S^Ibis server:,"
+                            + address.toString()); 
+                    // sl.registerProperty("ibis", id.toString());
+                }
+            } catch(Throwable e) {
+                // ignored
+            }
+            
             // Obtain a list of Services
             String implPath = typedProperties
                     .getProperty(ServerProperties.IMPLEMENTATION_PATH);
