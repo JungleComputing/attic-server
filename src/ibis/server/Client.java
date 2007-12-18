@@ -27,6 +27,7 @@ public class Client {
 
     private static DirectSocketAddress createAddressFromString(
             String serverString, int defaultPort) throws IOException {
+        
         if (serverString == null) {
             throw new IOException("serverString undefined");
         }
@@ -34,19 +35,22 @@ public class Client {
         // maybe it is a DirectSocketAddress?
         try {
             return DirectSocketAddress.getByAddress(serverString);
-        } catch (IllegalArgumentException e) {
+        } catch (Exception e) {
             // IGNORE
         }
 
+        Exception exception = null;
+        // or only a host address
         try {
             return DirectSocketAddress.getByAddress(serverString, defaultPort);
         } catch (Exception e) {
+            exception = e;
             // IGNORE
         }
 
         throw new IOException(
                 "could not create server address from given string: "
-                        + serverString);
+                        + serverString, exception);
     }
 
     /**
