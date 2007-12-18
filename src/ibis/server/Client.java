@@ -5,6 +5,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
+import org.apache.log4j.Logger;
+
 import ibis.smartsockets.SmartSocketsProperties;
 import ibis.smartsockets.direct.DirectSocketAddress;
 import ibis.smartsockets.virtual.InitializationException;
@@ -17,6 +19,9 @@ import ibis.util.TypedProperties;
  * suitable VirtualSocketFactory.
  */
 public class Client {
+    
+    private static final Logger logger = Logger.getLogger(Client.class);
+    
     private static VirtualSocketFactory defaultFactory = null;
 
     private static Map<String, VirtualSocketFactory> factories = new HashMap<String, VirtualSocketFactory>();
@@ -35,22 +40,22 @@ public class Client {
         // maybe it is a DirectSocketAddress?
         try {
             return DirectSocketAddress.getByAddress(serverString);
-        } catch (Exception e) {
+        } catch (Throwable e) {
             // IGNORE
         }
 
-        Exception exception = null;
+        Throwable throwable = null;
         // or only a host address
         try {
             return DirectSocketAddress.getByAddress(serverString, defaultPort);
-        } catch (Exception e) {
-            exception = e;
+        } catch (Throwable e) {
+            throwable = e;
             // IGNORE
         }
 
         throw new IOException(
                 "could not create server address from given string: "
-                        + serverString, exception);
+                        + serverString, throwable);
     }
 
     /**
@@ -70,15 +75,21 @@ public class Client {
 
         String serverAddressString = typedProperties
                 .getProperty(ServerProperties.ADDRESS);
-        if (serverAddressString == null) {
+        if (serverAddressString == null || serverAddressString.equals("")) {
             throw new IOException(ServerProperties.ADDRESS
                     + " undefined, cannot locate server");
         }
+        
+        logger.debug("server address = \"" + serverAddressString + "\"");
 
         int defaultPort = typedProperties.getIntProperty(ServerProperties.PORT);
 
         DirectSocketAddress serverMachine = createAddressFromString(
                 serverAddressString, defaultPort);
+        
+        if (serverMachine == null) {
+            throw new IOException("cannot get address of server");
+        }
 
         return new VirtualSocketAddress(serverMachine, port);
     }
