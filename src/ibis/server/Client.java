@@ -19,9 +19,9 @@ import ibis.util.TypedProperties;
  * suitable VirtualSocketFactory.
  */
 public class Client {
-    
+
     private static final Logger logger = Logger.getLogger(Client.class);
-    
+
     private static VirtualSocketFactory defaultFactory = null;
 
     private static Map<String, VirtualSocketFactory> factories = new HashMap<String, VirtualSocketFactory>();
@@ -31,10 +31,10 @@ public class Client {
     }
 
     private static DirectSocketAddress createAddressFromString(
-            String serverString, int defaultPort) throws IOException {
-        
+            String serverString, int defaultPort) throws ConfigurationException {
+
         if (serverString == null) {
-            throw new IOException("serverString undefined");
+            throw new ConfigurationException("serverString undefined");
         }
 
         // maybe it is a DirectSocketAddress?
@@ -53,7 +53,7 @@ public class Client {
             // IGNORE
         }
 
-        throw new IOException(
+        throw new ConfigurationException(
                 "could not create server address from given string: "
                         + serverString, throwable);
     }
@@ -68,7 +68,7 @@ public class Client {
      *            servers address)
      */
     public static VirtualSocketAddress getServiceAddress(int port,
-            Properties properties) throws IOException {
+            Properties properties) throws ConfigurationException {
         TypedProperties typedProperties = ServerProperties
                 .getHardcodedProperties();
         typedProperties.addProperties(properties);
@@ -76,26 +76,26 @@ public class Client {
         String serverAddressString = typedProperties
                 .getProperty(ServerProperties.ADDRESS);
         if (serverAddressString == null || serverAddressString.equals("")) {
-            throw new IOException(ServerProperties.ADDRESS
+            throw new ConfigurationException(ServerProperties.ADDRESS
                     + " undefined, cannot locate server");
         }
-        
+
         logger.debug("server address = \"" + serverAddressString + "\"");
 
         int defaultPort = typedProperties.getIntProperty(ServerProperties.PORT);
 
         DirectSocketAddress serverMachine = createAddressFromString(
                 serverAddressString, defaultPort);
-        
+
         if (serverMachine == null) {
-            throw new IOException("cannot get address of server");
+            throw new ConfigurationException("cannot get address of server");
         }
 
         return new VirtualSocketAddress(serverMachine, port);
     }
 
     public static synchronized VirtualSocketFactory getFactory(Properties p)
-            throws InitializationException, IOException {
+            throws ConfigurationException, IOException {
         TypedProperties typedProperties = ServerProperties
                 .getHardcodedProperties();
         typedProperties.addProperties(p);
@@ -121,8 +121,12 @@ public class Client {
                 Properties smartProperties = new Properties();
                 smartProperties.put(SmartSocketsProperties.DISCOVERY_ALLOWED,
                         "false");
-                defaultFactory = VirtualSocketFactory.createSocketFactory(
-                        smartProperties, true);
+                try {
+                    defaultFactory = VirtualSocketFactory.createSocketFactory(
+                            smartProperties, true);
+                } catch (InitializationException e) {
+                    throw new IOException(e);
+                }
             }
             return defaultFactory;
         }
@@ -136,8 +140,12 @@ public class Client {
                     "false");
             smartProperties.put(SmartSocketsProperties.HUB_ADDRESSES, hubs);
 
-            factory = VirtualSocketFactory.createSocketFactory(smartProperties,
-                    true);
+            try {
+                factory = VirtualSocketFactory.createSocketFactory(
+                        smartProperties, true);
+            } catch (InitializationException e) {
+                throw new IOException(e);
+            }
 
             factories.put(hubs, factory);
         }
