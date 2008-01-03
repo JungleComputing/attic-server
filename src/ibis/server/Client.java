@@ -129,7 +129,7 @@ public class Client {
                     defaultFactory = VirtualSocketFactory.createSocketFactory(
                             smartProperties, true);
                 } catch (InitializationException e) {
-                    throw new IOException(e);
+                    throw new IOException(e.getMessage());
                 }
             }
             return defaultFactory;
@@ -148,7 +148,7 @@ public class Client {
                 factory = VirtualSocketFactory.createSocketFactory(
                         smartProperties, true);
             } catch (InitializationException e) {
-                throw new IOException(e);
+                throw new IOException(e.getMessage());
             }
 
             factories.put(hubs, factory);
