@@ -29,10 +29,12 @@ public final class ServerProperties {
     public static final String PRINT_STATS = PREFIX + "print.stats";
 
     public static final String PRINT_ERRORS = PREFIX + "print.errors";
-    
+
     // client side properties
 
     public static final String ADDRESS = PREFIX + "address";
+    
+    public static final String IS_HUB = PREFIX + "is.hub";
 
     private static final String[][] propertiesList = new String[][] {
             { HUB_ADDRESSES, null, "Comma seperated list of hubs." },
@@ -55,7 +57,8 @@ public final class ServerProperties {
                     "Boolean: if true, statistics are printed to standard out regularly." },
             { ADDRESS, null,
                     "Address of the server" },
-
+            { IS_HUB, "true",
+                    "Boolean: Is the server also a hub?" },
     };
     
     public static TypedProperties getHardcodedProperties() {

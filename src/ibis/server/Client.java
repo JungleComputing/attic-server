@@ -104,10 +104,10 @@ public class Client {
                 .getProperty(ServerProperties.HUB_ADDRESSES);
         
         //did the server also start a hub?
-        boolean startHub = typedProperties.getBooleanProperty(ServerProperties.START_HUB);
+        boolean serverIsHub = typedProperties.getBooleanProperty(ServerProperties.IS_HUB);
 
         String server = typedProperties.getProperty(ServerProperties.ADDRESS);
-        if (server != null && startHub) {
+        if (server != null && serverIsHub) {
             //add server to hub addresses
             DirectSocketAddress serverAddress = createAddressFromString(server,
                     typedProperties.getIntProperty(ServerProperties.PORT));
