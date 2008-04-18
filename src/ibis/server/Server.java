@@ -11,6 +11,7 @@ import java.util.Properties;
 
 import org.apache.log4j.Logger;
 
+import ibis.server.remote.RemoteHandler;
 import ibis.smartsockets.SmartSocketsProperties;
 import ibis.smartsockets.direct.DirectSocketAddress;
 import ibis.smartsockets.hub.Hub;
@@ -34,9 +35,12 @@ public final class Server {
 
     private final boolean hubOnly;
 
+    private final boolean remote;
+
     /**
      * Create a server with the given server properties
      */
+    @SuppressWarnings("unchecked")
     public Server(Properties properties) throws Exception {
         services = new ArrayList<Service>();
 
@@ -60,13 +64,17 @@ public final class Server {
         if (hubs != null) {
             smartProperties.put(SmartSocketsProperties.HUB_ADDRESSES, hubs);
         }
-        
-        String hubAddressFile = typedProperties.getProperty(ServerProperties.HUB_ADDRESS_FILE);
+
+        String hubAddressFile = typedProperties
+                .getProperty(ServerProperties.HUB_ADDRESS_FILE);
         if (hubAddressFile != null) {
-            smartProperties.put(SmartSocketsProperties.HUB_ADDRESS_FILE, hubAddressFile);
+            smartProperties.put(SmartSocketsProperties.HUB_ADDRESS_FILE,
+                    hubAddressFile);
         }
 
         hubOnly = typedProperties.getBooleanProperty(ServerProperties.HUB_ONLY);
+
+        remote = typedProperties.getBooleanProperty(ServerProperties.REMOTE);
 
         if (hubOnly) {
             virtualSocketFactory = null;
@@ -97,13 +105,13 @@ public final class Server {
                 ServiceLink sl = virtualSocketFactory.getServiceLink();
                 if (sl != null) {
                     sl.registerProperty("smartsockets.viz", "S^Ibis server:,"
-                            + address.toString()); 
+                            + address.toString());
                     // sl.registerProperty("ibis", id.toString());
                 }
-            } catch(Throwable e) {
+            } catch (Throwable e) {
                 // ignored
             }
-            
+
             // Obtain a list of Services
             String implPath = typedProperties
                     .getProperty(ServerProperties.IMPLEMENTATION_PATH);
@@ -146,12 +154,20 @@ public final class Server {
         return address.toString();
     }
 
-    public DirectSocketAddress[] getHubs() {
+    public String[] getHubs() {
+        DirectSocketAddress[] hubs;
         if (hubOnly) {
-            return hub.knownHubs();
+            hubs = hub.knownHubs();
         } else {
-            return virtualSocketFactory.getKnownHubs();
+            hubs = virtualSocketFactory.getKnownHubs();
         }
+
+        ArrayList<String> result = new ArrayList<String>();
+        for (DirectSocketAddress hub : hubs) {
+            result.add(hub.toString());
+        }
+
+        return result.toArray(new String[0]);
     }
 
     public void addHubs(DirectSocketAddress... hubAddresses) {
@@ -200,6 +216,10 @@ public final class Server {
         }
     }
 
+    private boolean hasRemote() {
+        return remote;
+    }
+
     private static void printUsage(PrintStream out) {
         out.println("Start a server for Ibis.");
         out.println();
@@ -208,8 +228,10 @@ public final class Server {
         out.println("--no-hub\t\t\tDo not start a hub.");
         out
                 .println("--hub-only\t\t\tOnly start a hub, not the rest of the server.");
-        out.println("--hub-addresses HUB[,HUB]\tAdditional hubs to connect to.");
-        out.println("--hub-address-file [FILE_NAME]\tWrite the addresses of the hub to the given");
+        out
+                .println("--hub-addresses HUB[,HUB]\tAdditional hubs to connect to.");
+        out
+                .println("--hub-address-file [FILE_NAME]\tWrite the addresses of the hub to the given");
         out.println("\t\t\t\tfile. The file is deleted on exit.");
         out.println("--port PORT\t\t\tPort used for the server.");
         out.println();
@@ -252,7 +274,8 @@ public final class Server {
                 properties.setProperty(ServerProperties.HUB_ADDRESSES, args[i]);
             } else if (args[i].equalsIgnoreCase("--hub-address-file")) {
                 i++;
-                properties.setProperty(ServerProperties.HUB_ADDRESS_FILE, args[i]);
+                properties.setProperty(ServerProperties.HUB_ADDRESS_FILE,
+                        args[i]);
             } else if (args[i].equalsIgnoreCase("--port")) {
                 i++;
                 properties.put(ServerProperties.PORT, args[i]);
@@ -266,7 +289,7 @@ public final class Server {
                     || args[i].equalsIgnoreCase("-help")
                     || args[i].equalsIgnoreCase("-h")
                     || args[i].equalsIgnoreCase("/?")) {
-                printUsage(System.out);
+                printUsage(System.err);
                 System.exit(0);
             } else if (args[i].contains("=")) {
                 String[] parts = args[i].split("=", 2);
@@ -281,7 +304,7 @@ public final class Server {
         Server server = null;
         try {
             server = new Server(properties);
-            System.out.println(server.toString());
+            System.err.println(server.toString());
         } catch (Throwable t) {
             System.err.println("Could not start Server: " + t);
             System.exit(1);
@@ -294,30 +317,34 @@ public final class Server {
             System.err.println("warning: could not registry shutdown hook");
         }
 
-        String knownHubs = null;
-        while (true) {
-            DirectSocketAddress[] hubs = server.getHubs();
-            // FIXME: remove if smartsockets promises to not return null ;)
-            if (hubs == null) {
-                hubs = new DirectSocketAddress[0];
-            }
-
-            if (hubs.length != 0) {
-                String newKnownHubs = hubs[0].toString();
-                for (int i = 1; i < hubs.length; i++) {
-                    newKnownHubs += "," + hubs[i].toString();
+        if (server.hasRemote()) {
+            new RemoteHandler(server).run();
+        } else {
+            String knownHubs = null;
+            while (true) {
+                String[] hubs = server.getHubs();
+                // FIXME: remove if smartsockets promises to not return null ;)
+                if (hubs == null) {
+                    hubs = new String[0];
                 }
 
-                if (!newKnownHubs.equals(knownHubs)) {
-                    knownHubs = newKnownHubs;
-                    System.out.println("Known hubs now: " + knownHubs);
-                }
-            }
+                if (hubs.length != 0) {
+                    String newKnownHubs = hubs[0].toString();
+                    for (int i = 1; i < hubs.length; i++) {
+                        newKnownHubs += "," + hubs[i].toString();
+                    }
 
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                return;
+                    if (!newKnownHubs.equals(knownHubs)) {
+                        knownHubs = newKnownHubs;
+                        System.err.println("Known hubs now: " + knownHubs);
+                    }
+                }
+
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    return;
+                }
             }
         }
     }
