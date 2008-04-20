@@ -206,6 +206,7 @@ public final class Server {
      * Stops all services
      */
     public void end(boolean waitUntilIdle) {
+        //TODO: add a timeout here too?
         for (Service service : services) {
             service.end(waitUntilIdle);
         }
@@ -234,6 +235,7 @@ public final class Server {
                 .println("--hub-address-file [FILE_NAME]\tWrite the addresses of the hub to the given");
         out.println("\t\t\t\tfile. The file is deleted on exit.");
         out.println("--port PORT\t\t\tPort used for the server.");
+        out.println("--remote \t\t\t\tListen to commands for this server on stdin.");
         out.println();
         out
                 .println("PROPERTY=VALUE\t\t\tSet a property, as if it was set in a");
@@ -285,6 +287,8 @@ public final class Server {
                 properties.setProperty(ServerProperties.PRINT_ERRORS, "true");
             } else if (args[i].equalsIgnoreCase("--stats")) {
                 properties.setProperty(ServerProperties.PRINT_STATS, "true");
+            } else if (args[i].equalsIgnoreCase("--remote")) {
+                properties.setProperty(ServerProperties.REMOTE, "true");
             } else if (args[i].equalsIgnoreCase("--help")
                     || args[i].equalsIgnoreCase("-help")
                     || args[i].equalsIgnoreCase("-h")
@@ -304,7 +308,6 @@ public final class Server {
         Server server = null;
         try {
             server = new Server(properties);
-            System.err.println(server.toString());
         } catch (Throwable t) {
             System.err.println("Could not start Server: " + t);
             System.exit(1);
@@ -320,6 +323,7 @@ public final class Server {
         if (server.hasRemote()) {
             new RemoteHandler(server).run();
         } else {
+            System.err.println(server.toString());
             String knownHubs = null;
             while (true) {
                 String[] hubs = server.getHubs();
