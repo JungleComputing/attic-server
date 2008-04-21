@@ -30,7 +30,13 @@ public class OutputForwarder implements Runnable {
                     return;
                 }
 
+                //System.err.println("read: " + new String(buffer, 0, read));
+                
                 out.write(buffer, 0, read);
+                out.flush();
+                
+                //System.err.println("written: " + new String(buffer, 0, read));
+
             }
         } catch (IOException e) {
             // IGNORE
