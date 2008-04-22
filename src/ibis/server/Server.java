@@ -6,7 +6,9 @@ import ibis.util.TypedProperties;
 import java.io.PrintStream;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 
 import org.apache.log4j.Logger;
@@ -31,7 +33,7 @@ public final class Server {
 
     private final DirectSocketAddress address;
 
-    private final ArrayList<Service> services;
+    private final Map<String, Service> services;
 
     private final boolean hubOnly;
 
@@ -42,7 +44,7 @@ public final class Server {
      */
     @SuppressWarnings("unchecked")
     public Server(Properties properties) throws Exception {
-        services = new ArrayList<Service>();
+        services = new HashMap<String, Service>();
 
         // load properties from config files and such
         TypedProperties typedProperties = ServerProperties
@@ -112,14 +114,9 @@ public final class Server {
                 // ignored
             }
 
-            // Obtain a list of Services
-            String implPath = typedProperties
-                    .getProperty(ServerProperties.IMPLEMENTATION_PATH);
-            ClassLister clstr = ClassLister.getClassLister(implPath);
-            List<Class> compnts = clstr.getClassList("Ibis-Service",
-                    Service.class);
-            Class[] serviceClassList = compnts
-                    .toArray(new Class[compnts.size()]);
+            ClassLister classLister = ClassLister.getClassLister(null);
+            Class[] serviceClassList = classLister.getClassList("Ibis-Service",
+                    Service.class).toArray(new Class[0]);
 
             for (int i = 0; i < serviceClassList.length; i++) {
                 try {
@@ -130,7 +127,7 @@ public final class Server {
                             .newInstance(
                                     new Object[] { typedProperties,
                                             virtualSocketFactory });
-                    services.add(service);
+                    services.put(service.getServiceName(), service);
                 } catch (InvocationTargetException e) {
                     if (e.getCause() == null) {
                         logger.warn("Could not create service "
@@ -154,6 +151,34 @@ public final class Server {
         return address.toString();
     }
 
+    /**
+     * Returns the names of all services currently in this server
+     */
+    public String[] getServiceNames() {
+        return services.keySet().toArray(new String[0]);
+    }
+
+    /**
+     * Function to retrieve statistics for a given service
+     * 
+     * @param serviceName
+     *            Name of service to get statistics of
+     * 
+     * @return statistics for given service, or null if service exist.
+     */
+    public Map<String, String> getStats(String serviceName) {
+        Service service = services.get(serviceName);
+
+        if (service == null) {
+            return null;
+        }
+
+        return service.getStats();
+    }
+
+    /**
+     * Returns the addresses of all hubs known to this server
+     */
     public String[] getHubs() {
         DirectSocketAddress[] hubs;
         if (hubOnly) {
@@ -170,6 +195,9 @@ public final class Server {
         return result.toArray(new String[0]);
     }
 
+    /**
+     * Tell the server about some hubs
+     */
     public void addHubs(DirectSocketAddress... hubAddresses) {
         if (hubOnly) {
             hub.addHubs(hubAddresses);
@@ -178,6 +206,9 @@ public final class Server {
         }
     }
 
+    /**
+     * Tell the server about some hubs
+     */
     public void addHubs(String... hubAddresses) {
         if (hubOnly) {
             hub.addHubs(hubAddresses);
@@ -194,7 +225,7 @@ public final class Server {
         String message = "Ibis server running on " + getLocalAddress()
                 + "\nList of Services:";
 
-        for (Service service : services) {
+        for (Service service : services.values()) {
             message += "\n    " + service.toString();
         }
 
@@ -203,12 +234,23 @@ public final class Server {
     }
 
     /**
-     * Stops all services
+     * Stops all services. May wait until the services are idle.
+     * 
+     * @param timeout
+     *            timeout for ending all services in Milliseconds. 0 == wait
+     *            forever, -1 == no not wait.
      */
-    public void end(boolean waitUntilIdle) {
-        //TODO: add a timeout here too?
-        for (Service service : services) {
-            service.end(waitUntilIdle);
+    public void end(long timeout) {
+        long deadline = System.currentTimeMillis() + timeout;
+
+        if (timeout == 0) {
+            deadline = Long.MAX_VALUE;
+        } else if (timeout == -1) {
+            deadline = 0;
+        }
+
+        for (Service service : services.values()) {
+            service.end(deadline);
         }
         if (hubOnly) {
             hub.end();
@@ -235,7 +277,8 @@ public final class Server {
                 .println("--hub-address-file [FILE_NAME]\tWrite the addresses of the hub to the given");
         out.println("\t\t\t\tfile. The file is deleted on exit.");
         out.println("--port PORT\t\t\tPort used for the server.");
-        out.println("--remote \t\t\t\tListen to commands for this server on stdin.");
+        out
+                .println("--remote \t\t\t\tListen to commands for this server on stdin.");
         out.println();
         out
                 .println("PROPERTY=VALUE\t\t\tSet a property, as if it was set in a");
@@ -256,7 +299,7 @@ public final class Server {
         }
 
         public void run() {
-            server.end(false);
+            server.end(-1);
         }
     }
 

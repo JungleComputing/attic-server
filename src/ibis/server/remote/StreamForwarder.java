@@ -4,12 +4,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-public class OutputForwarder implements Runnable {
+public class StreamForwarder implements Runnable {
 
     private final InputStream in;
     private final OutputStream out;
 
-    public OutputForwarder(InputStream in, OutputStream out) {
+    public StreamForwarder(InputStream in, OutputStream out) {
         this.in = in;
         this.out = out;
         
@@ -27,6 +27,8 @@ public class OutputForwarder implements Runnable {
                 read = in.read(buffer);
 
                 if (read == -1) {
+                    out.flush();
+                    out.close();
                     return;
                 }
 

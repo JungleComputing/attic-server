@@ -1,39 +1,54 @@
 package ibis.server.remote;
 
+import java.util.Map;
+
 public class RemoteTest {
 
-	public static void main(String[] args) throws Exception {
-		ProcessBuilder builder = new ProcessBuilder();
-		builder.command().add("ipl-server");
-		builder.command().add("--remote");
+    public static void main(String[] args) throws Exception {
+        ProcessBuilder builder = new ProcessBuilder();
+        builder.command().add("ipl-server");
+        builder.command().add("--remote");
 
-		Process process = builder.start();
+        Process process = builder.start();
 
-		System.err.println("started server");
+        System.err.println("started server");
 
-		RemoteClient client = new RemoteClient();
+        RemoteClient client = new RemoteClient();
 
-		new OutputForwarder(process.getInputStream(), client.getOutputStream());
-		new OutputForwarder(client.getInputStream(), process.getOutputStream());
-		new OutputForwarder(process.getErrorStream(), System.err);
+        new StreamForwarder(process.getInputStream(), client.getOutputStream());
+        new StreamForwarder(client.getInputStream(), process.getOutputStream());
+        new StreamForwarder(process.getErrorStream(), System.err);
 
-		System.err.println("started client");
+        System.err.println("started client");
 
-		System.err
-				.println("server local address = " + client.getLocalAddress());
+        System.err
+                .println("server local address = " + client.getLocalAddress());
 
-		client.addHubs("localhost:5332");
-		String[] hubs = client.getHubs();
+        client.addHubs("localhost:5332");
+        String[] hubs = client.getHubs();
 
-		for (String hub : hubs) {
-			System.err.println("hub = " + hub);
-		}
+        for (String hub : hubs) {
+            System.err.println("hub = " + hub);
+        }
 
-		System.err.println("ending server");
-		client.end(false);
-		System.err.println("ended");
+        String[] services = client.getServiceNames();
 
-		process.destroy();
-	}
+        for (String service : services) {
+            System.err.println("service = " + service);
+        }
+        
+        Map<String, String> statistics = client.getStats("registry");
+        
+        System.err.println("registry statistics:");
+        for(Map.Entry<String, String> entry: statistics.entrySet()) {
+            System.err.println(entry.getKey() + " = " + entry.getValue());
+        }
+
+        System.err.println("ending server");
+        client.end(0);
+        System.err.println("ended");
+
+        process.destroy();
+    }
 
 }

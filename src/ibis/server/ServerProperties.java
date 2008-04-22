@@ -22,9 +22,6 @@ public final class ServerProperties {
 
     public static final String PORT = PREFIX + "port";
 
-    public static final String IMPLEMENTATION_PATH = PREFIX
-            + "implementation.path";
-
     public static final String PRINT_EVENTS = PREFIX + "print.events";
 
     public static final String PRINT_STATS = PREFIX + "print.stats";
@@ -52,9 +49,6 @@ public final class ServerProperties {
                     "String: file where the address of the hub is printed to (and deleted on exit)" },
 
             { PORT, "8888", "Port which the server binds to" },
-
-            { IMPLEMENTATION_PATH, null,
-                    "Path used to find service implementations" },
 
             { PRINT_EVENTS, "false",
                     "Boolean: if true, events of services are printed to standard out." },
