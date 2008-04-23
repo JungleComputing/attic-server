@@ -123,7 +123,7 @@ public class RemoteHandler implements Runnable {
 
             if (magic != Protocol.MAGIC) {
                 out.writeByte(Protocol.REPLY_ERROR);
-                out.writeUTF("wrong magic byte: " + magic + "instead of "
+                out.writeUTF("wrong magic byte: " + magic + " instead of "
                         + Protocol.MAGIC);
                 close();
                 return;
