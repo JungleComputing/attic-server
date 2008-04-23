@@ -130,7 +130,7 @@ public class RemoteHandler implements Runnable {
             }
             if (version != Protocol.VERSION) {
                 out.writeByte(Protocol.REPLY_ERROR);
-                out.writeUTF("wrong version: " + version + "instead of "
+                out.writeUTF("wrong version: " + version + " instead of "
                         + Protocol.VERSION);
                 close();
                 return;
