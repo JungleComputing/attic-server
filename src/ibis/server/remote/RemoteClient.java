@@ -233,7 +233,15 @@ public class RemoteClient {
         if (reply != Protocol.REPLY_OK) {
             throw new IOException(message);
         }
-        in.close();
-        out.close();
+        try {
+            out.close();
+        } catch (IOException e) {
+            //IGNORE
+        }
+        try {
+            in.close();
+        } catch (IOException e) {
+            //IGNORE
+        }
     }
 }
