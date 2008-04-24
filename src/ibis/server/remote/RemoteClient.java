@@ -150,7 +150,7 @@ public class RemoteClient {
      * @throws IOException
      *             in case of trouble
      */
-    public String[] getServiceNames() throws IOException {
+    public synchronized String[] getServiceNames() throws IOException {
         init();
 
         out.writeByte(Protocol.OPCODE_GET_SERVICE_NAMES);
@@ -183,7 +183,7 @@ public class RemoteClient {
      * @throws IOException
      *             in case of trouble.
      */
-    public Map<String, String> getStats(String serviceName) throws IOException {
+    public synchronized  Map<String, String> getStats(String serviceName) throws IOException {
         init();
 
         out.writeByte(Protocol.OPCODE_GET_STATISTICS);
