@@ -58,12 +58,16 @@ public class RemoteClient {
         logger.debug("written magic/version, waiting for reply");
 
         byte reply = in.readByte();
+        logger.debug("got reply: " + reply);
         String message = in.readUTF();
+        logger.debug("got message: " + message);
         if (reply != Protocol.REPLY_OK) {
             throw new IOException(message);
         }
 
         serverAddress = in.readUTF();
+
+        logger.debug("server address retrieved: " + serverAddress);
 
         initialized = true;
     }
@@ -148,7 +152,7 @@ public class RemoteClient {
      * Returns the names of all services currently in this server
      * 
      * @throws IOException
-     *             in case of trouble
+     *                 in case of trouble
      */
     public synchronized String[] getServiceNames() throws IOException {
         init();
@@ -177,13 +181,14 @@ public class RemoteClient {
      * Function to retrieve statistics for a given service
      * 
      * @param serviceName
-     *            Name of service to get statistics of
+     *                Name of service to get statistics of
      * 
      * @return statistics for given service, or null if service exist.
      * @throws IOException
-     *             in case of trouble.
+     *                 in case of trouble.
      */
-    public synchronized  Map<String, String> getStats(String serviceName) throws IOException {
+    public synchronized Map<String, String> getStats(String serviceName)
+            throws IOException {
         init();
 
         out.writeByte(Protocol.OPCODE_GET_STATISTICS);
@@ -227,21 +232,34 @@ public class RemoteClient {
         out.writeLong(timeout);
         out.flush();
 
-        byte reply = in.readByte();
-        String message = in.readUTF();
+        byte reply = Protocol.REPLY_OK;
+        String message = "";
 
+        //try to read reply
+        try {
+            reply = in.readByte();
+            message = in.readUTF();
+        } catch (IOException e) {
+            // IGNORE
+        }
+
+        //if reply received AND not "OK" throw an exception
+        //error on receiving reply ignored
         if (reply != Protocol.REPLY_OK) {
             throw new IOException(message);
         }
+
+        try {
+
+            in.close();
+        } catch (IOException e) {
+            // IGNORE
+        }
+
         try {
             out.close();
         } catch (IOException e) {
-            //IGNORE
-        }
-        try {
-            in.close();
-        } catch (IOException e) {
-            //IGNORE
+            // IGNORE
         }
     }
 }
