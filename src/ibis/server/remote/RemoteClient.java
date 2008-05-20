@@ -2,13 +2,16 @@ package ibis.server.remote;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
+import java.io.PrintStream;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -18,15 +21,13 @@ public class RemoteClient {
 
     private static final Logger logger = Logger.getLogger(RemoteClient.class);
 
-    private final DataInputStream in;
+    private final BufferedReader in;
 
-    private final DataOutputStream out;
+    private final PrintStream out;
 
     private final PipedOutputStream pipeOut;
 
     private final PipedInputStream pipeIn;
-
-    private boolean initialized = false;
 
     private String serverAddress = null;
 
@@ -37,41 +38,56 @@ public class RemoteClient {
      */
     public RemoteClient() throws IOException {
         pipeOut = new PipedOutputStream();
-        in = new DataInputStream(new BufferedInputStream(new PipedInputStream(
+        in = new BufferedReader(new InputStreamReader(new PipedInputStream(
                 pipeOut)));
 
         pipeIn = new PipedInputStream();
-        out = new DataOutputStream(new BufferedOutputStream(
-                new PipedOutputStream(pipeIn)));
+        out = new PrintStream(new PipedOutputStream(pipeIn));
 
     }
-
-    public synchronized void init() throws IOException {
-        if (initialized) {
-            return;
-        }
-
-        out.writeByte(Protocol.MAGIC);
-        out.writeInt(Protocol.VERSION);
+    
+    private void println(String line) {
+        out.println(Protocol.CLIENT_SAYS + line);
         out.flush();
-
-        logger.debug("written magic/version, waiting for reply");
-
-        byte reply = in.readByte();
-        logger.debug("got reply: " + reply);
-        String message = in.readUTF();
-        logger.debug("got message: " + message);
-        if (reply != Protocol.REPLY_OK) {
-            throw new IOException(message);
-        }
-
-        serverAddress = in.readUTF();
-
-        logger.debug("server address retrieved: " + serverAddress);
-
-        initialized = true;
+    }
+    
+    private void println(int value) {
+        out.println(Protocol.CLIENT_SAYS + value);
+        out.flush();
     }
 
+    private String readLine() throws IOException {
+        String line = in.readLine();
+
+        while (line != null && !line.startsWith(Protocol.SERVER_SAYS)) {
+            System.err.println("client ignoring line: " + line);
+            line = in.readLine();
+        }
+
+        return line.substring(Protocol.SERVER_SAYS.length());
+    }
+
+    private int readSizeIntLine() throws IOException {
+        try {
+            String string = readLine();
+
+            if (string == null) {
+                throw new IOException("could not read int, got EOF");
+            }
+
+            int result = Integer.parseInt(string);
+            
+            if (result < 0 || result > 15000) {
+                throw new IOException("invalid number: " + result);
+            }
+            
+            return result;
+        } catch (NumberFormatException e) {
+            throw new IOException("parse error on reading int: " + e);
+        }
+    }
+    
+    
     /**
      * Returns the stream data from the server for this client can be written
      * to.
@@ -93,24 +109,26 @@ public class RemoteClient {
     public InputStream getInputStream() {
         return pipeIn;
     }
+    
+    public synchronized void addHubs(String... hubs) throws IOException {
+        for(String hub: hubs) {
+            addHub(hub);
+        }
+    }
+            
 
     /**
      * Tell the server about some hubs
      */
-    public synchronized void addHubs(String... hubs) throws IOException {
-        init();
-
-        out.writeByte(Protocol.OPCODE_ADD_HUBS);
-        out.writeInt(hubs.length);
-        for (String hub : hubs) {
-            out.writeUTF(hub);
-        }
-        out.flush();
-        byte reply = in.readByte();
-        String message = in.readUTF();
-
-        if (reply != Protocol.REPLY_OK) {
-            throw new IOException(message);
+    public synchronized void addHub(String hub) throws IOException {
+        println(Protocol.OPCODE_ADD_HUB);
+        
+        println(hub);
+        
+        String status = readLine();
+        
+        if (status == null || !status.equals("OK")) {
+            throw new IOException("Status not OK: " + status);
         }
     }
 
@@ -118,22 +136,18 @@ public class RemoteClient {
      * Returns the addresses of all hubs known to this server
      */
     public synchronized String[] getHubs() throws IOException {
-        init();
+        println(Protocol.OPCODE_GET_HUBS);
 
-        out.writeByte(Protocol.OPCODE_GET_HUBS);
-        out.flush();
-
-        byte reply = in.readByte();
-        String message = in.readUTF();
-
-        if (reply != Protocol.REPLY_OK) {
-            throw new IOException(message);
+        String status = readLine();
+        
+        if (status == null || !status.equals("OK")) {
+            throw new IOException("Status not OK: " + status);
         }
-
-        int size = in.readInt();
+        
+        int size = readSizeIntLine();
         String[] result = new String[size];
         for (int i = 0; i < size; i++) {
-            result[i] = in.readUTF();
+            result[i] = readLine();
         }
 
         return result;
@@ -143,7 +157,15 @@ public class RemoteClient {
      * Returns the local address of the server as a string
      */
     public synchronized String getLocalAddress() throws IOException {
-        init();
+        if (serverAddress == null) {
+            println(Protocol.OPCODE_GET_LOCAL_ADDRESS);
+            String status = readLine();
+            if (status == null || !status.equals("OK")) {
+                throw new IOException("wrong status: " + status);
+            }
+
+            serverAddress = readLine();
+        }
 
         return serverAddress;
     }
@@ -152,72 +174,63 @@ public class RemoteClient {
      * Returns the names of all services currently in this server
      * 
      * @throws IOException
-     *                 in case of trouble
+     *             in case of trouble
      */
     public synchronized String[] getServiceNames() throws IOException {
-        init();
+        println(Protocol.OPCODE_GET_SERVICE_NAMES);
 
-        out.writeByte(Protocol.OPCODE_GET_SERVICE_NAMES);
-        out.flush();
+        String status = readLine();
 
-        byte reply = in.readByte();
-        String message = in.readUTF();
-
-        if (reply != Protocol.REPLY_OK) {
-            throw new IOException(message);
+        if (status == null || !status.equals("OK")) {
+            throw new IOException("wrong status: " + status);
         }
 
-        int size = in.readInt();
-        String[] result = new String[size];
-        for (int i = 0; i < size; i++) {
-            result[i] = in.readUTF();
+        try {
+            int nrOfServices = readSizeIntLine();
+
+            String[] result = new String[nrOfServices];
+
+            for (int i = 0; i < result.length; i++) {
+                result[i] = readLine();
+            }
+
+            return result;
+        } catch (NumberFormatException e) {
+            throw new IOException("could not parse result into integer: " + e);
         }
-
-        return result;
-
     }
 
     /**
      * Function to retrieve statistics for a given service
      * 
      * @param serviceName
-     *                Name of service to get statistics of
+     *            Name of service to get statistics of
      * 
      * @return statistics for given service, or null if service exist.
      * @throws IOException
-     *                 in case of trouble.
+     *             in case of trouble.
      */
     public synchronized Map<String, String> getStats(String serviceName)
             throws IOException {
-        init();
 
-        out.writeByte(Protocol.OPCODE_GET_STATISTICS);
-        out.writeUTF(serviceName);
-        out.flush();
-
-        byte reply = in.readByte();
-        String message = in.readUTF();
-
-        if (reply != Protocol.REPLY_OK) {
-            throw new IOException(message);
+        println(Protocol.OPCODE_GET_STATISTICS);
+        println(serviceName);
+        
+        String status = readLine();
+        if (status == null || !status.equals("OK")) {
+            throw new IOException("wrong status: " + status);
         }
 
-        boolean resultIsNull = in.readBoolean();
-
-        if (resultIsNull) {
-            return null;
-        }
-
-        int size = in.readInt();
+        int size = readSizeIntLine();
+        
         Map<String, String> result = new HashMap<String, String>();
         for (int i = 0; i < size; i++) {
-            String key = in.readUTF();
-            String value = in.readUTF();
-
-            // readUTF does not send null, so do this trick
-            if (value.equals(Protocol.NULL_STRING)) {
+            String key = readLine();
+            String value = readLine();
+            if (value.equals("null")) {
                 value = null;
             }
+
             result.put(key, value);
         }
 
@@ -226,40 +239,22 @@ public class RemoteClient {
     }
 
     public synchronized void end(long timeout) throws IOException {
-        init();
+        println(Protocol.OPCODE_END);
+        println("" + timeout);
 
-        out.writeByte(Protocol.OPCODE_END);
-        out.writeLong(timeout);
-        out.flush();
-
-        byte reply = Protocol.REPLY_OK;
-        String message = "";
-
-        //try to read reply
-        try {
-            reply = in.readByte();
-            message = in.readUTF();
-        } catch (IOException e) {
-            // IGNORE
+        String status = readLine();
+        
+        if (status == null) {
+            //end may cause null, but that's ok
+            return;
         }
-
-        //if reply received AND not "OK" throw an exception
-        //error on receiving reply ignored
-        if (reply != Protocol.REPLY_OK) {
-            throw new IOException(message);
+        
+        if (!status.equals("OK")) {
+            throw new IOException("wrong status: " + status);
         }
-
-        try {
-
-            in.close();
-        } catch (IOException e) {
-            // IGNORE
-        }
-
-        try {
-            out.close();
-        } catch (IOException e) {
-            // IGNORE
-        }
+        
+        in.close();
+        
+        out.close();
     }
 }
