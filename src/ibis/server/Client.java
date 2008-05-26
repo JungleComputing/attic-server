@@ -107,11 +107,11 @@ public class Client {
         boolean serverIsHub = typedProperties.getBooleanProperty(ServerProperties.IS_HUB);
 
         String server = typedProperties.getProperty(ServerProperties.ADDRESS);
-        if (server != null && serverIsHub) {
+        if (server != null && !server.equals("") && serverIsHub) {
             //add server to hub addresses
             DirectSocketAddress serverAddress = createAddressFromString(server,
                     typedProperties.getIntProperty(ServerProperties.PORT));
-            if (hubs == null) {
+            if (hubs == null || hubs.equals("")) {
                 hubs = serverAddress.toString();
             } else {
                 hubs = hubs + "," + serverAddress.toString();
