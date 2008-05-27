@@ -18,8 +18,8 @@ public class Protocol {
 
     public static final String REPLY_ERROR = "ERROR";
     
-    public static final String CLIENT_SAYS = "CLIENT SAYS: ";
+    public static final String CLIENT_SAYS = "CLIENT SAYS";
     
-    public static final String SERVER_SAYS = "SERVER SAYS: "; 
+    public static final String SERVER_SAYS = "SERVER SAYS"; 
 
 }
