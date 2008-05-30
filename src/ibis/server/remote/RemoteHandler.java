@@ -18,11 +18,6 @@ public class RemoteHandler implements Runnable {
         System.out.flush();
     }
 
-    private void println(int value) {
-        System.out.println(Protocol.SERVER_SAYS + value);
-        System.out.flush();
-    }
-
     private String[] readLine() throws IOException {
         String line = in.readLine();
 

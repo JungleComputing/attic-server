@@ -1,10 +1,6 @@
 package ibis.server.remote;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -15,11 +11,11 @@ import java.io.PrintStream;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.log4j.Logger;
+// import org.apache.log4j.Logger;
 
 public class RemoteClient {
 
-    private static final Logger logger = Logger.getLogger(RemoteClient.class);
+    // private static final Logger logger = Logger.getLogger(RemoteClient.class);
 
     private final BufferedReader in;
 
@@ -51,11 +47,6 @@ public class RemoteClient {
         out.flush();
     }
     
-    private void println(int value) {
-        out.println(Protocol.CLIENT_SAYS + value);
-        out.flush();
-    }
-
     private String readLine() throws IOException {
         String line = in.readLine();
 
