@@ -3,7 +3,10 @@ package ibis.server.remote;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
 import java.util.Map;
+
+import org.apache.log4j.Logger;
 
 import ibis.server.Server;
 
@@ -13,26 +16,40 @@ public class RemoteHandler implements Runnable {
 
     BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
 
-    private void println(String string) {
-        System.out.println(Protocol.SERVER_SAYS + string);
+    private void sendReply(String... arguments) {
+        String line = Protocol.SERVER_REPLY;
+
+        // skip appending space for first argument
+        if (arguments.length > 0) {
+            line += arguments[0];
+        }
+
+        for (int i = 1; i < arguments.length; i++) {
+            line += " " + arguments[i];
+        }
+
+        // System.err.println("sending reply: " + line);
+
+        System.out.println(line);
         System.out.flush();
     }
 
-    private String[] readLine() throws IOException {
+    private String[] readCommand() throws IOException {
         String line = in.readLine();
 
+        // System.err.println("got command: " + line);
+
         if (line == null) {
+            // end of stream, stop server
             return null;
         }
 
-        String[] result = line.split(" ");
-
-        if (!result[0].equals(Protocol.CLIENT_SAYS)) {
-            throw new IOException("line did not start with "
-                    + Protocol.CLIENT_SAYS + " as expected. Line: " + line);
+        if (!line.startsWith(Protocol.CLIENT_COMMAND)) {
+            throw new IOException("expected: " + Protocol.CLIENT_COMMAND
+                    + ", got: " + line);
         }
 
-        return result;
+        return line.substring(Protocol.CLIENT_COMMAND.length()).split(" ");
     }
 
     public RemoteHandler(Server server) {
@@ -40,83 +57,79 @@ public class RemoteHandler implements Runnable {
     }
 
     private void handleGetLocalAddress() throws IOException {
-        println("OK " + server.getLocalAddress());
+        sendReply(server.getLocalAddress());
     }
 
     private void handleAddHub(String[] command) throws IOException {
-        if (command.length < 3) {
-            println("hub not given");
+        if (command.length < 2) {
+            System.out.println("hub not given");
             return;
         }
 
-        String hub = command[2];
+        String hub = command[1];
 
         server.addHubs(hub);
 
-        println("OK");
+        sendReply(new String[0]);
     }
 
     private void handleGetHubs() throws IOException {
         String[] hubs = server.getHubs();
 
-        String reply = "OK " + hubs.length;
-
-        for (String hub : hubs) {
-            reply = reply + " " + hub;
-        }
-        println(reply);
+        sendReply(hubs);
     }
 
     private void handleGetServiceNames() throws IOException {
         String[] services = server.getServiceNames();
 
-        String reply = "OK" + services.length;
-        for (String service : services) {
-            reply = reply + " " + service;
-        }
-        println(reply);
+        sendReply(services);
     }
 
     private void handleGetStatistics(String[] command) throws IOException {
-        if (command.length < 3) {
-            println("service name not given");
+        if (command.length < 2) {
+            System.out.println("service name not given");
             return;
         }
 
-        String serviceName = command[2];
+        String serviceName = command[1];
 
         Map<String, String> statistics = server.getStats(serviceName);
 
         if (statistics == null) {
-            println("Could not find service: " + serviceName);
+            System.out.println("Could not find service: " + serviceName);
             return;
         }
 
-        String reply = "OK " + statistics.size();
+        ArrayList<String> reply = new ArrayList<String>();
 
         for (Map.Entry<String, String> entry : statistics.entrySet()) {
-            reply += " " + entry.getKey();
-            reply += " " + entry.getValue(); // may print "null"
+            reply.add(entry.getKey());
+            if (entry.getValue() == null) {
+                reply.add("null");
+            } else {
+                reply.add(entry.getValue());
+            }
         }
 
-        println(reply);
+        sendReply(reply.toArray(new String[0]));
     }
 
     private void handleEnd(String[] command) throws IOException {
-        if (command.length < 3) {
-            println("timeout not given");
+        if (command.length < 2) {
+            System.out.println("timeout not given");
             return;
         }
 
-        String timeoutString = command[2];
+        String timeoutString = command[1];
 
         try {
             long timeout = Long.parseLong(timeoutString);
 
             server.end(timeout);
 
-            println("OK");
+            sendReply(new String[0]);
         } catch (NumberFormatException e) {
+            System.out.println("could not parse timeout");
             throw new IOException("error parsing long: " + e);
         }
     }
@@ -126,7 +139,7 @@ public class RemoteHandler implements Runnable {
 
         while (true) {
             try {
-                String[] command = readLine();
+                String[] command = readCommand();
 
                 if (command == null) {
                     System.err.println("input stream closed, stopping server");
@@ -134,22 +147,22 @@ public class RemoteHandler implements Runnable {
                     return;
                 }
 
-                if (command.length < 2) {
-                    println("command not given");
+                if (command.length == 0) {
+                    System.out.println("command not given");
                 } else {
+                    String opcode = command[0];
 
-                    System.err.println("got command: " + command[0]);
-                    if (command[1].equals(Protocol.OPCODE_GET_LOCAL_ADDRESS)) {
+                    if (opcode.equals(Protocol.OPCODE_GET_LOCAL_ADDRESS)) {
                         handleGetLocalAddress();
-                    } else if (command[1].equals(Protocol.OPCODE_ADD_HUB)) {
+                    } else if (opcode.equals(Protocol.OPCODE_ADD_HUB)) {
                         handleAddHub(command);
-                    } else if (command[1].equals(Protocol.OPCODE_GET_HUBS)) {
+                    } else if (opcode.equals(Protocol.OPCODE_GET_HUBS)) {
                         handleGetHubs();
-                    } else if (command[1].equals(Protocol.OPCODE_GET_SERVICE_NAMES)) {
+                    } else if (opcode.equals(Protocol.OPCODE_GET_SERVICE_NAMES)) {
                         handleGetServiceNames();
-                    } else if (command[1].equals(Protocol.OPCODE_GET_STATISTICS)) {
+                    } else if (opcode.equals(Protocol.OPCODE_GET_STATISTICS)) {
                         handleGetStatistics(command);
-                    } else if (command[1].equals(Protocol.OPCODE_END)) {
+                    } else if (opcode.equals(Protocol.OPCODE_END)) {
                         handleEnd(command);
                         return;
                     } else {
@@ -160,8 +173,8 @@ public class RemoteHandler implements Runnable {
                 System.err
                         .println("error on handling remote request (ignoring)");
                 e.printStackTrace(System.err);
+                System.out.println("error: " + e.getMessage());
             }
-
         }
     }
 }

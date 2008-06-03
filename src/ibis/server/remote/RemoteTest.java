@@ -13,10 +13,8 @@ public class RemoteTest {
 
         System.err.println("started server");
 
-        RemoteClient client = new RemoteClient();
+        RemoteClient client = new RemoteClient(process.getInputStream(), process.getOutputStream());
 
-        new StreamForwarder(process.getInputStream(), client.getOutputStream());
-        new StreamForwarder(client.getInputStream(), process.getOutputStream());
         new StreamForwarder(process.getErrorStream(), System.err);
 
         System.err.println("started client");
@@ -25,6 +23,15 @@ public class RemoteTest {
                 .println("server local address = " + client.getLocalAddress());
 
         client.addHubs("localhost:5332");
+        
+        client.addHubs("bla");
+
+        client.addHubs("machine:5");
+
+        client.addHubs("localhost:4345");
+
+        client.addHubs("machine.domain.nl:543");
+
         String[] hubs = client.getHubs();
 
         for (String hub : hubs) {
