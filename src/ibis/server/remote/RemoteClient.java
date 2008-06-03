@@ -170,11 +170,10 @@ public class RemoteClient {
         try {
             readReply();
         } catch (IOException e) {
-            logger.warn("error on ending server", e);
+            logger.debug("error on ending server", e);
         }
 
         in.close();
-
         out.close();
     }
 }
